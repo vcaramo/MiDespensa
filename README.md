@@ -24,6 +24,12 @@ Los cambios se guardan automáticamente en IndexedDB de **cada navegador y dispo
 
 La consulta de datos guardados funciona sin conexión después de cargar la aplicación al menos una vez; las modificaciones y la importación requieren conexión con el sitio. El navegador puede borrar su almacenamiento local, así que conserva los JSON fuera de él. No subas tus exportaciones reales al repositorio público.
 
+## Catálogo inicial
+
+El archivo [catalogo-inicial.json](docs/catalogo-inicial.json) contiene **100 productos en 11 tipos**, sin estancias, contenedores ni existencias. Desde la sección **Catálogo** puedes descargarlo y después elegir **Importar JSON**. Revisa la vista previa y confirma para empezar con esos productos; luego podrás añadir, renombrar o eliminar los que quieras.
+
+**Importar sustituye todos los datos locales**, incluidas las ubicaciones que ya hayas creado. Si tienes datos propios, expórtalos antes. Para regenerar el archivo de ejemplo tras editar su lista, ejecuta `node tools/generate-starter.js`.
+
 ## Publicar con GitHub Pages
 
 Los archivos publicables están en `docs/`. En la configuración del repositorio, elige **Deploy from a branch**, la rama que uses y la carpeta **`/docs`**. El repositorio de GitHub Pages personal gratuito puede ser público: confirma que solo subes código y datos ficticios. La publicación aún no se ha realizado.

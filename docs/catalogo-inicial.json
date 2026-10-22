@@ -1,0 +1,556 @@
+{
+  "schemaVersion": 1,
+  "revision": 0,
+  "updatedAt": null,
+  "estancias": [],
+  "contenedores": [],
+  "tipos": [
+    {
+      "id": "tipo-despensa-seca",
+      "nombre": "Despensa seca"
+    },
+    {
+      "id": "tipo-conservas",
+      "nombre": "Conservas y tarros"
+    },
+    {
+      "id": "tipo-lacteos",
+      "nombre": "Lácteos, alternativas y huevos"
+    },
+    {
+      "id": "tipo-frutas-verduras",
+      "nombre": "Frutas y verduras"
+    },
+    {
+      "id": "tipo-frescos",
+      "nombre": "Carnes, pescados y frescos"
+    },
+    {
+      "id": "tipo-congelados",
+      "nombre": "Congelados"
+    },
+    {
+      "id": "tipo-panaderia",
+      "nombre": "Panadería y repostería"
+    },
+    {
+      "id": "tipo-bebidas",
+      "nombre": "Bebidas"
+    },
+    {
+      "id": "tipo-limpieza",
+      "nombre": "Limpieza del hogar"
+    },
+    {
+      "id": "tipo-lavanderia",
+      "nombre": "Lavandería"
+    },
+    {
+      "id": "tipo-higiene",
+      "nombre": "Higiene personal"
+    }
+  ],
+  "productos": [
+    {
+      "id": "producto-001",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Arroz redondo"
+    },
+    {
+      "id": "producto-002",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Arroz integral"
+    },
+    {
+      "id": "producto-003",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Macarrones"
+    },
+    {
+      "id": "producto-004",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Espaguetis"
+    },
+    {
+      "id": "producto-005",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Fideos"
+    },
+    {
+      "id": "producto-006",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Harina de trigo"
+    },
+    {
+      "id": "producto-007",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Harina de maíz"
+    },
+    {
+      "id": "producto-008",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Azúcar blanco"
+    },
+    {
+      "id": "producto-009",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Azúcar moreno"
+    },
+    {
+      "id": "producto-010",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Sal fina"
+    },
+    {
+      "id": "producto-011",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Aceite de oliva virgen extra"
+    },
+    {
+      "id": "producto-012",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Aceite de girasol"
+    },
+    {
+      "id": "producto-013",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Vinagre de vino"
+    },
+    {
+      "id": "producto-014",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Pan rallado"
+    },
+    {
+      "id": "producto-015",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Copos de avena"
+    },
+    {
+      "id": "producto-016",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Cereales de desayuno"
+    },
+    {
+      "id": "producto-017",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Galletas María"
+    },
+    {
+      "id": "producto-018",
+      "tipoId": "tipo-despensa-seca",
+      "nombre": "Café molido"
+    },
+    {
+      "id": "producto-019",
+      "tipoId": "tipo-conservas",
+      "nombre": "Tomate triturado"
+    },
+    {
+      "id": "producto-020",
+      "tipoId": "tipo-conservas",
+      "nombre": "Tomate frito"
+    },
+    {
+      "id": "producto-021",
+      "tipoId": "tipo-conservas",
+      "nombre": "Atún al natural"
+    },
+    {
+      "id": "producto-022",
+      "tipoId": "tipo-conservas",
+      "nombre": "Atún en aceite de oliva"
+    },
+    {
+      "id": "producto-023",
+      "tipoId": "tipo-conservas",
+      "nombre": "Sardinas en lata"
+    },
+    {
+      "id": "producto-024",
+      "tipoId": "tipo-conservas",
+      "nombre": "Garbanzos cocidos"
+    },
+    {
+      "id": "producto-025",
+      "tipoId": "tipo-conservas",
+      "nombre": "Lentejas cocidas"
+    },
+    {
+      "id": "producto-026",
+      "tipoId": "tipo-conservas",
+      "nombre": "Alubias cocidas"
+    },
+    {
+      "id": "producto-027",
+      "tipoId": "tipo-conservas",
+      "nombre": "Maíz dulce"
+    },
+    {
+      "id": "producto-028",
+      "tipoId": "tipo-conservas",
+      "nombre": "Guisantes en conserva"
+    },
+    {
+      "id": "producto-029",
+      "tipoId": "tipo-conservas",
+      "nombre": "Aceitunas verdes"
+    },
+    {
+      "id": "producto-030",
+      "tipoId": "tipo-conservas",
+      "nombre": "Mermelada de fresa"
+    },
+    {
+      "id": "producto-031",
+      "tipoId": "tipo-lacteos",
+      "nombre": "Leche entera"
+    },
+    {
+      "id": "producto-032",
+      "tipoId": "tipo-lacteos",
+      "nombre": "Leche semidesnatada"
+    },
+    {
+      "id": "producto-033",
+      "tipoId": "tipo-lacteos",
+      "nombre": "Leche desnatada"
+    },
+    {
+      "id": "producto-034",
+      "tipoId": "tipo-lacteos",
+      "nombre": "Bebida de avena"
+    },
+    {
+      "id": "producto-035",
+      "tipoId": "tipo-lacteos",
+      "nombre": "Yogur natural"
+    },
+    {
+      "id": "producto-036",
+      "tipoId": "tipo-lacteos",
+      "nombre": "Yogur de sabores"
+    },
+    {
+      "id": "producto-037",
+      "tipoId": "tipo-lacteos",
+      "nombre": "Queso fresco"
+    },
+    {
+      "id": "producto-038",
+      "tipoId": "tipo-lacteos",
+      "nombre": "Queso curado"
+    },
+    {
+      "id": "producto-039",
+      "tipoId": "tipo-lacteos",
+      "nombre": "Mantequilla"
+    },
+    {
+      "id": "producto-040",
+      "tipoId": "tipo-lacteos",
+      "nombre": "Huevos"
+    },
+    {
+      "id": "producto-041",
+      "tipoId": "tipo-frutas-verduras",
+      "nombre": "Manzanas"
+    },
+    {
+      "id": "producto-042",
+      "tipoId": "tipo-frutas-verduras",
+      "nombre": "Plátanos"
+    },
+    {
+      "id": "producto-043",
+      "tipoId": "tipo-frutas-verduras",
+      "nombre": "Naranjas"
+    },
+    {
+      "id": "producto-044",
+      "tipoId": "tipo-frutas-verduras",
+      "nombre": "Limones"
+    },
+    {
+      "id": "producto-045",
+      "tipoId": "tipo-frutas-verduras",
+      "nombre": "Peras"
+    },
+    {
+      "id": "producto-046",
+      "tipoId": "tipo-frutas-verduras",
+      "nombre": "Tomates frescos"
+    },
+    {
+      "id": "producto-047",
+      "tipoId": "tipo-frutas-verduras",
+      "nombre": "Lechuga"
+    },
+    {
+      "id": "producto-048",
+      "tipoId": "tipo-frutas-verduras",
+      "nombre": "Zanahorias"
+    },
+    {
+      "id": "producto-049",
+      "tipoId": "tipo-frutas-verduras",
+      "nombre": "Cebollas"
+    },
+    {
+      "id": "producto-050",
+      "tipoId": "tipo-frutas-verduras",
+      "nombre": "Patatas"
+    },
+    {
+      "id": "producto-051",
+      "tipoId": "tipo-frutas-verduras",
+      "nombre": "Ajos"
+    },
+    {
+      "id": "producto-052",
+      "tipoId": "tipo-frutas-verduras",
+      "nombre": "Pimientos verdes"
+    },
+    {
+      "id": "producto-053",
+      "tipoId": "tipo-frutas-verduras",
+      "nombre": "Calabacín"
+    },
+    {
+      "id": "producto-054",
+      "tipoId": "tipo-frutas-verduras",
+      "nombre": "Brócoli"
+    },
+    {
+      "id": "producto-055",
+      "tipoId": "tipo-frescos",
+      "nombre": "Pollo fresco"
+    },
+    {
+      "id": "producto-056",
+      "tipoId": "tipo-frescos",
+      "nombre": "Carne picada de ternera"
+    },
+    {
+      "id": "producto-057",
+      "tipoId": "tipo-frescos",
+      "nombre": "Jamón cocido"
+    },
+    {
+      "id": "producto-058",
+      "tipoId": "tipo-frescos",
+      "nombre": "Jamón serrano"
+    },
+    {
+      "id": "producto-059",
+      "tipoId": "tipo-frescos",
+      "nombre": "Salchichas frescas"
+    },
+    {
+      "id": "producto-060",
+      "tipoId": "tipo-frescos",
+      "nombre": "Filetes de merluza frescos"
+    },
+    {
+      "id": "producto-061",
+      "tipoId": "tipo-frescos",
+      "nombre": "Salmón fresco"
+    },
+    {
+      "id": "producto-062",
+      "tipoId": "tipo-frescos",
+      "nombre": "Tofu"
+    },
+    {
+      "id": "producto-063",
+      "tipoId": "tipo-congelados",
+      "nombre": "Verduras congeladas"
+    },
+    {
+      "id": "producto-064",
+      "tipoId": "tipo-congelados",
+      "nombre": "Guisantes congelados"
+    },
+    {
+      "id": "producto-065",
+      "tipoId": "tipo-congelados",
+      "nombre": "Patatas fritas congeladas"
+    },
+    {
+      "id": "producto-066",
+      "tipoId": "tipo-congelados",
+      "nombre": "Pizza congelada"
+    },
+    {
+      "id": "producto-067",
+      "tipoId": "tipo-congelados",
+      "nombre": "Croquetas congeladas"
+    },
+    {
+      "id": "producto-068",
+      "tipoId": "tipo-congelados",
+      "nombre": "Helado de vainilla"
+    },
+    {
+      "id": "producto-069",
+      "tipoId": "tipo-congelados",
+      "nombre": "Filetes de merluza congelados"
+    },
+    {
+      "id": "producto-070",
+      "tipoId": "tipo-congelados",
+      "nombre": "Pan congelado"
+    },
+    {
+      "id": "producto-071",
+      "tipoId": "tipo-panaderia",
+      "nombre": "Barra de pan"
+    },
+    {
+      "id": "producto-072",
+      "tipoId": "tipo-panaderia",
+      "nombre": "Pan de molde"
+    },
+    {
+      "id": "producto-073",
+      "tipoId": "tipo-panaderia",
+      "nombre": "Tortillas de trigo"
+    },
+    {
+      "id": "producto-074",
+      "tipoId": "tipo-panaderia",
+      "nombre": "Tostadas"
+    },
+    {
+      "id": "producto-075",
+      "tipoId": "tipo-panaderia",
+      "nombre": "Bollos de desayuno"
+    },
+    {
+      "id": "producto-076",
+      "tipoId": "tipo-panaderia",
+      "nombre": "Levadura de panadería"
+    },
+    {
+      "id": "producto-077",
+      "tipoId": "tipo-bebidas",
+      "nombre": "Agua mineral"
+    },
+    {
+      "id": "producto-078",
+      "tipoId": "tipo-bebidas",
+      "nombre": "Agua con gas"
+    },
+    {
+      "id": "producto-079",
+      "tipoId": "tipo-bebidas",
+      "nombre": "Zumo de naranja"
+    },
+    {
+      "id": "producto-080",
+      "tipoId": "tipo-bebidas",
+      "nombre": "Refresco de cola"
+    },
+    {
+      "id": "producto-081",
+      "tipoId": "tipo-bebidas",
+      "nombre": "Té negro"
+    },
+    {
+      "id": "producto-082",
+      "tipoId": "tipo-bebidas",
+      "nombre": "Infusión de manzanilla"
+    },
+    {
+      "id": "producto-083",
+      "tipoId": "tipo-limpieza",
+      "nombre": "Lavavajillas a mano"
+    },
+    {
+      "id": "producto-084",
+      "tipoId": "tipo-limpieza",
+      "nombre": "Pastillas para lavavajillas"
+    },
+    {
+      "id": "producto-085",
+      "tipoId": "tipo-limpieza",
+      "nombre": "Limpiador multiusos"
+    },
+    {
+      "id": "producto-086",
+      "tipoId": "tipo-limpieza",
+      "nombre": "Lejía"
+    },
+    {
+      "id": "producto-087",
+      "tipoId": "tipo-limpieza",
+      "nombre": "Limpiacristales"
+    },
+    {
+      "id": "producto-088",
+      "tipoId": "tipo-limpieza",
+      "nombre": "Bolsas de basura"
+    },
+    {
+      "id": "producto-089",
+      "tipoId": "tipo-limpieza",
+      "nombre": "Papel de cocina"
+    },
+    {
+      "id": "producto-090",
+      "tipoId": "tipo-limpieza",
+      "nombre": "Bayetas"
+    },
+    {
+      "id": "producto-091",
+      "tipoId": "tipo-lavanderia",
+      "nombre": "Detergente para ropa"
+    },
+    {
+      "id": "producto-092",
+      "tipoId": "tipo-lavanderia",
+      "nombre": "Suavizante"
+    },
+    {
+      "id": "producto-093",
+      "tipoId": "tipo-lavanderia",
+      "nombre": "Quitamanchas"
+    },
+    {
+      "id": "producto-094",
+      "tipoId": "tipo-lavanderia",
+      "nombre": "Pinzas para ropa"
+    },
+    {
+      "id": "producto-095",
+      "tipoId": "tipo-higiene",
+      "nombre": "Papel higiénico"
+    },
+    {
+      "id": "producto-096",
+      "tipoId": "tipo-higiene",
+      "nombre": "Jabón de manos"
+    },
+    {
+      "id": "producto-097",
+      "tipoId": "tipo-higiene",
+      "nombre": "Gel de ducha"
+    },
+    {
+      "id": "producto-098",
+      "tipoId": "tipo-higiene",
+      "nombre": "Champú"
+    },
+    {
+      "id": "producto-099",
+      "tipoId": "tipo-higiene",
+      "nombre": "Pasta de dientes"
+    },
+    {
+      "id": "producto-100",
+      "tipoId": "tipo-higiene",
+      "nombre": "Desodorante"
+    }
+  ],
+  "existencias": []
+}
