@@ -3,6 +3,17 @@
 **Fecha:** 22 de octubre de 2026.  
 **Estado:** implementado y probado; preparado para revisión del usuario.
 
+## Catálogo inicial integrado
+
+La web incluye `docs/catalogo-inicial.json` con 11 tipos y 100 productos. Al abrir la aplicación por primera vez, el catálogo se copia automáticamente al almacenamiento local. Si ya hay ubicaciones guardadas pero el catálogo está vacío, se añaden los tipos y productos conservando esas ubicaciones. Si existe un catálogo propio, se respeta. Una marca local impide volver a cargar el archivo en visitas posteriores o después de vaciar el catálogo.
+
+| Escenario | Resultado |
+| --- | --- |
+| Primer arranque sin datos e inspección de Catálogo. | Pasa en la pestaña integrada: aparecen 11 tipos y 100 productos sin descargar ni importar nada. |
+| Recargar el mismo origen. | Pasa: siguen siendo 11 tipos y 100 productos, sin duplicados. |
+| Abrir un origen con un catálogo propio previo. | Pasa: conserva sus 2 tipos y 2 productos, sin agregar el catálogo inicial. |
+| Añadir el catálogo inicial a un estado con estancias y contenedores. | Pasa en prueba de dominio: conserva las ubicaciones y no reemplaza un catálogo propio. |
+
 ## Implementado
 
 - Alta, consulta, renombrado y eliminación protegida de tipos de producto.

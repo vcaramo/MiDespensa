@@ -26,9 +26,9 @@ La consulta de datos guardados funciona sin conexión después de cargar la apli
 
 ## Catálogo inicial
 
-El archivo [catalogo-inicial.json](docs/catalogo-inicial.json) contiene **100 productos en 11 tipos**, sin estancias, contenedores ni existencias. Desde la sección **Catálogo** puedes descargarlo y después elegir **Importar JSON**. Revisa la vista previa y confirma para empezar con esos productos; luego podrás añadir, renombrar o eliminar los que quieras.
+El archivo [catalogo-inicial.json](docs/catalogo-inicial.json) forma parte de la web y contiene **100 productos en 11 tipos**, sin estancias, contenedores ni existencias. La aplicación incorpora ese catálogo automáticamente al primer uso. Si ya hay ubicaciones guardadas y el catálogo está vacío, añade los productos sin borrar las ubicaciones. Si ya existe un catálogo propio, lo conserva. Después puedes añadir, renombrar o eliminar productos y tipos; el catálogo inicial no reaparece si vacías el tuyo.
 
-**Importar sustituye todos los datos locales**, incluidas las ubicaciones que ya hayas creado. Si tienes datos propios, expórtalos antes. Para regenerar el archivo de ejemplo tras editar su lista, ejecuta `node tools/generate-starter.js`.
+**Importar JSON** sigue sirviendo para restaurar o trasladar copias entre dispositivos y sustituye todos los datos locales tras confirmación. Para regenerar el archivo inicial tras editar su lista, ejecuta `node tools/generate-starter.js`.
 
 ## Publicar con GitHub Pages
 

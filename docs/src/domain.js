@@ -20,6 +20,15 @@ export function emptyState() {
   };
 }
 
+export function withInitialCatalog(state, starter) {
+  if (state.tipos.length || state.productos.length) return state;
+  return {
+    ...state,
+    tipos: starter.tipos.map((entry) => ({ ...entry })),
+    productos: starter.productos.map((entry) => ({ ...entry })),
+  };
+}
+
 export function cleanName(value) {
   if (typeof value !== "string") throw new DomainError("Escribe un nombre válido.");
   const name = value.trim().replace(/\s+/gu, " ");

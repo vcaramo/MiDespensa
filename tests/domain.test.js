@@ -16,6 +16,7 @@ import {
   renameEstancia,
   renameTipo,
   updateProducto,
+  withInitialCatalog,
   validateState,
 } from "../docs/src/domain.js";
 
@@ -135,4 +136,22 @@ test("impide duplicados del catálogo y protege tipos y productos referenciados"
   state = deleteTipo(state, "lacteos");
   assert.equal(state.productos.length, 0);
   assert.equal(state.tipos.length, 1);
+});
+
+test("el catálogo inicial conserva ubicaciones y no sustituye uno propio", () => {
+  const starter = {
+    ...emptyState(),
+    tipos: [{ id: "tipo-inicial", nombre: "Despensa seca" }],
+    productos: [{ id: "producto-inicial", tipoId: "tipo-inicial", nombre: "Arroz" }],
+  };
+  const locations = exampleState();
+  const merged = validateState(withInitialCatalog(locations, starter));
+  assert.deepEqual(merged.estancias, locations.estancias);
+  assert.deepEqual(merged.contenedores, locations.contenedores);
+  assert.equal(merged.productos.length, 1);
+  assert.deepEqual(withInitialCatalog(merged, starter), merged);
+  const custom = createProducto(createTipo(locations, { id: "custom", nombre: "Propio" }), {
+    id: "producto-custom", tipoId: "custom", nombre: "Producto propio",
+  });
+  assert.deepEqual(withInitialCatalog(custom, starter), custom);
 });

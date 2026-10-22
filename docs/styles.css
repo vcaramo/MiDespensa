@@ -126,8 +126,6 @@ h1, h2, h3 { letter-spacing: -.04em; }
 .catalog-intro h1 { margin: 0 0 9px; font-size: clamp(32px, 4vw, 46px); line-height: 1.1; }
 .catalog-intro > p:not(.eyebrow) { max-width: 580px; color: #687b6d; font-size: 15px; line-height: 1.6; }
 .catalog-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 22px; }
-.catalog-intro .starter-hint { margin: 15px 0 0; color: #66796c; font-size: 13px; }
-.starter-hint a { color: #246646; font-weight: 700; text-underline-offset: 3px; }
 .catalog-summary { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 23px; }
 .catalog-summary span { display: inline-flex; align-items: baseline; gap: 8px; min-width: 135px; padding: 14px 18px; border: 1px solid #e5eae1; border-radius: 12px; background: #fff; color: #66796c; font-size: 13px; }
 .catalog-summary strong { color: #204634; font-size: 23px; }
