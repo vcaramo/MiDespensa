@@ -50,19 +50,25 @@ test("impide nombres duplicados en una estancia y en su destino", () => {
   assert.throws(() => moveContenedor(state, "nevera", "despensa"), /Ya existe/);
 });
 
-test("bloquea borrados con dependencias y permite borrar tras retirarlas", () => {
+test("elimina en cascada una estancia y sus contenedores vacíos", () => {
   let state = exampleState();
-  assert.throws(() => deleteEstancia(state, "cocina"), /Mueve o elimina/);
+  state = deleteEstancia(state, "cocina");
+  assert.deepEqual(state.estancias.map((item) => item.id), ["despensa"]);
+  assert.deepEqual(state.contenedores.map((item) => item.id), ["estanteria"]);
+  assert.equal(validateState(state).contenedores.length, 1);
+});
+
+test("bloquea el borrado en cascada si un contenedor tiene existencias", () => {
+  let state = exampleState();
   state = {
     ...state,
     tipos: [{ id: "lacteos", nombre: "Lácteos" }],
     productos: [{ id: "leche", tipoId: "lacteos", nombre: "Leche entera" }],
     existencias: [{ id: "stock", contenedorId: "nevera", productoId: "leche", cantidad: 2 }],
   };
+  assert.throws(() => deleteEstancia(state, "cocina"), /Retira o traslada/);
   assert.throws(() => deleteContenedor(state, "nevera"), /Retira o traslada/);
   state = { ...state, existencias: [] };
-  state = deleteContenedor(state, "nevera");
-  state = deleteContenedor(state, "armario");
   state = deleteEstancia(state, "cocina");
   assert.equal(state.estancias.length, 1);
   assert.equal(state.contenedores.length, 1);

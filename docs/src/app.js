@@ -324,13 +324,18 @@ async function submitEditor(event) {
 async function removeRoom() {
   const room = state.estancias.find((entry) => entry.id === selectedRoomId);
   if (!room) return;
-  if (state.contenedores.some((entry) => entry.estanciaId === room.id)) {
-    showToast("Mueve o elimina sus contenedores antes de borrar la estancia.", true);
+  const containers = state.contenedores.filter((entry) => entry.estanciaId === room.id);
+  const containerIds = new Set(containers.map((entry) => entry.id));
+  if (state.existencias.some((entry) => containerIds.has(entry.contenedorId))) {
+    showToast("Retira o traslada las existencias antes de borrar la estancia.", true);
     return;
   }
-  if (!window.confirm(`¿Eliminar la estancia «${room.nombre}»?`)) return;
+  const message = containers.length === 0
+    ? `¿Eliminar la estancia «${room.nombre}»? Esta acción no se puede deshacer.`
+    : `¿Eliminar la estancia «${room.nombre}» y sus ${containers.length} contenedores? Esta acción no se puede deshacer.`;
+  if (!window.confirm(message)) return;
   try {
-    await saveChange((current) => deleteEstancia(current, room.id), "Estancia eliminada.");
+    await saveChange((current) => deleteEstancia(current, room.id), "Estancia y contenedores eliminados.");
   } catch (error) {
     showError(error);
   }

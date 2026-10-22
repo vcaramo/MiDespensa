@@ -74,10 +74,17 @@ export function renameEstancia(state, id, nombre) {
 
 export function deleteEstancia(state, id) {
   findById(state.estancias, id, "La estancia");
-  if (state.contenedores.some((entry) => entry.estanciaId === id)) {
-    throw new DomainError("Mueve o elimina sus contenedores antes de borrar la estancia.");
+  const containerIds = new Set(
+    state.contenedores.filter((entry) => entry.estanciaId === id).map((entry) => entry.id),
+  );
+  if (state.existencias.some((entry) => containerIds.has(entry.contenedorId))) {
+    throw new DomainError("Retira o traslada las existencias de sus contenedores antes de borrar la estancia.");
   }
-  return { ...state, estancias: state.estancias.filter((entry) => entry.id !== id) };
+  return {
+    ...state,
+    estancias: state.estancias.filter((entry) => entry.id !== id),
+    contenedores: state.contenedores.filter((entry) => entry.estanciaId !== id),
+  };
 }
 
 function containersInRoom(state, estanciaId) {

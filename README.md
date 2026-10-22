@@ -1,6 +1,6 @@
 # Despensa
 
-Aplicación personal de despensa para una vivienda. Esta entrega implementa la **Fase 1: ubicaciones**. El catálogo y el inventario están señalados en la interfaz como próximas fases.
+Aplicación personal de despensa para una vivienda. Esta entrega implementa la **Fase 1: ubicaciones**. Puedes crear, renombrar y mover contenedores. Al eliminar una estancia, una confirmación indica cuántos contenedores vacíos se borrarán con ella; si contienen existencias, el borrado se bloquea. La interfaz se adapta a móvil, tableta y ordenador. El catálogo y el inventario están señalados como próximas fases.
 
 ## Abrirla en local
 

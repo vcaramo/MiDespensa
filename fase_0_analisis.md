@@ -34,7 +34,7 @@ El documento JSON incluirá una **versión de esquema** y estas colecciones. Los
 
 - Nombres no vacíos. Para productos, impedir dos nombres iguales tras quitar espacios sobrantes e ignorar mayúsculas; advertir de nombres parecidos sin bloquearlos. Un nombre descriptivo distingue marca o formato por ahora.
 - Cada producto pertenece a **un** tipo. Cantidades en **unidades enteras**; no se permiten saldos negativos. Una fila de existencia contiene una cantidad positiva y desaparece al llegar a cero, sin borrar el producto.
-- Impedir borrar una estancia con contenedores, un contenedor con existencias, un tipo con productos o un producto con existencias. El usuario deberá mover o retirar primero lo asociado.
+- Borrar una estancia y sus contenedores vacíos en cascada, tras confirmación explícita. Si alguno contiene existencias, impedir el borrado hasta retirarlas o trasladarlas. Impedir borrar un contenedor con existencias, un tipo con productos o un producto con existencias.
 - Trasladar un contenedor conserva su ID y su contenido. Trasladar existencias resta del origen y suma en destino como una sola operación lógica, conservando el producto del catálogo y el total.
 - Validar un JSON completo antes de importarlo: versión compatible, IDs únicos, referencias válidas, nombres y cantidades correctos. Si falla, conservar intactos los datos actuales. Antes de sustituirlos, ofrecer exportar una copia de lo existente.
 - Proteger cambios simultáneos en dos pestañas para que una no sobrescriba silenciosamente a la otra.
@@ -64,7 +64,7 @@ Se aplazan subdivisiones de contenedores, subtipos, varios tipos por producto, l
 | Fase | Entrega y verificación |
 | --- | --- |
 | 0. Definición | Alcance personal, modelo, reglas, tecnología gratuita y pruebas documentados. |
-| 1. Organización física | Crear `Cocina` y `Despensa`; `Nevera` y `Armario` en Cocina, `Estantería` en Despensa. Renombrar estancias/contenedores y trasladar un contenedor conservando su ID y relaciones. Bloquear borrados con elementos asociados. Cerrar y reabrir: datos presentes. Exportar JSON, borrar datos de prueba e importarlo: estructura recuperada. Sin red se pueden consultar ubicaciones, pero no modificarlas. |
+| 1. Organización física | Crear `Cocina` y `Despensa`; `Nevera` y `Armario` en Cocina, `Estantería` en Despensa. Renombrar estancias/contenedores y trasladar un contenedor conservando su ID y relaciones. Borrar una estancia y sus contenedores vacíos tras confirmación; bloquear si hay existencias. Cerrar y reabrir: datos presentes. Exportar JSON, borrar datos de prueba e importarlo: estructura recuperada. Sin red se pueden consultar ubicaciones, pero no modificarlas. Revisar la interfaz en móvil, tableta y ordenador. |
 | 2. Catálogo | Crear `Lácteos` y `Conservas`, `Leche entera` y `Atún en conserva`; consultar productos por tipo. Renombrar un tipo y conservar sus productos. Crear un nuevo tipo desde la interfaz sin modificar código. Rechazar nombre de producto duplicado y permitir producto sin stock. Exportar/importar conserva IDs y relaciones. |
 | 3. Inventario | Guardar 2 unidades de leche en Nevera y 6 en Armario con un único producto: total 8. Retirar 1: total 7. Trasladar 2 del Armario a Nevera: total 7. Rechazar saldos negativos y cambios incompletos. Cerrar/reabrir y exportar/importar conserva cantidades y relaciones. |
 | 4. Consultas y búsqueda | Buscar por nombre, filtrar por tipo y consultar ubicaciones y total. Probar consulta offline de datos guardados y bloqueo de cambios en Android, iPhone/iPad y ordenador. Comprobar que otro dispositivo solo recibe datos tras importación manual y que la importación reemplaza tras confirmación. |
@@ -82,7 +82,7 @@ Antes de dar una fase por terminada se comprobarán sus criterios. No se declara
 | Importación que sustituye todo tras vista previa y confirmación. | Confirmada. |
 | Consulta offline y escritura solo con conexión, sin sincronización. | Confirmada. |
 | Un tipo y nombre descriptivo por producto; unidades enteras, sin lotes/caducidad ni saldo negativo. | Confirmada. |
-| Bloquear borrados con referencias y duplicados exactos de nombre de producto. | Confirmada. |
+| Borrar estancias con sus contenedores vacíos tras confirmación; bloquear borrados que perderían existencias. Impedir duplicados exactos de nombre de producto. | Confirmada; eliminación en cascada revisada por el usuario el 22 de octubre de 2026. |
 | IndexedDB, Service Worker, JavaScript modular y CSV legible. | Propuesta técnica concreta para implementar las decisiones anteriores. |
 | Cuentas, perfiles, datos compartidos y 30 copias automáticas diarias. | Aplazadas expresamente para una versión posterior. |
 
