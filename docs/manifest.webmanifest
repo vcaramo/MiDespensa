@@ -1,0 +1,14 @@
+{
+  "name": "Despensa",
+  "short_name": "Despensa",
+  "description": "Organiza los espacios de tu vivienda.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#faf9f4",
+  "theme_color": "#153b32",
+  "icons": [
+    { "src": "./icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

@@ -1,0 +1,10 @@
+# Datos personales exportados de la aplicación
+despensa-*.json
+despensa-*.csv
+datos/
+copias/
+
+# Archivos temporales locales
+node_modules/
+.DS_Store
+Thumbs.db

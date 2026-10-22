@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#153b32" />
+    <meta name="description" content="Organiza las estancias y contenedores de tu despensa." />
+    <title>Despensa · Tu hogar en orden</title>
+    <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./src/app.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <div class="header-inner">
+          <div class="brand" aria-label="Despensa">
+            <span class="brand-mark" aria-hidden="true">D</span>
+            <span class="brand-text">despensa<span class="brand-dot">.</span></span>
+          </div>
+          <nav class="primary-nav" aria-label="Secciones">
+            <button type="button" class="nav-link is-active" data-view="ubicaciones" aria-current="page">Ubicaciones</button>
+            <button type="button" class="nav-link" data-view="catalogo">Catálogo</button>
+            <button type="button" class="nav-link" data-view="inventario">Inventario</button>
+          </nav>
+          <div id="connection-status" class="connection-status is-checking" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span class="status-text">Comprobando conexión</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <section id="view-ubicaciones" class="view" aria-labelledby="page-title">
+          <div class="hero">
+            <div class="hero-copy">
+              <p class="eyebrow">TU HOGAR, MÁS CLARO</p>
+              <h1 id="page-title">Cada cosa en su lugar.</h1>
+              <p class="hero-description">Organiza tus espacios y encuentra fácilmente dónde guardas cada producto.</p>
+              <div class="hero-actions">
+                <button id="add-room-main" class="button button-primary" type="button">+ Nueva estancia</button>
+                <span id="offline-hint" class="offline-hint" hidden>Sin conexión: puedes consultar, pero los cambios están pausados.</span>
+              </div>
+            </div>
+            <div class="hero-illustration" aria-hidden="true">
+              <div class="shelf shelf-top"><span class="jar jar-small"></span><span class="jar jar-tall"></span><span class="box box-cream"></span></div>
+              <div class="shelf shelf-bottom"><span class="box box-green"></span><span class="jar jar-wide"></span><span class="box box-orange"></span></div>
+            </div>
+          </div>
+
+          <div class="stats" aria-label="Resumen de ubicaciones">
+            <div class="stat-card"><span class="stat-label">Estancias</span><strong id="room-count">0</strong></div>
+            <div class="stat-card"><span class="stat-label">Contenedores</span><strong id="container-count">0</strong></div>
+            <div class="stat-card stat-card-note"><span class="stat-label">Tus datos</span><strong>En este dispositivo</strong></div>
+          </div>
+
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">ORGANIZACIÓN FÍSICA</p>
+              <h2>Espacios de tu vivienda</h2>
+            </div>
+            <p>Selecciona una estancia para ver sus contenedores.</p>
+          </div>
+
+          <div class="locations-layout">
+            <section class="panel room-panel" aria-labelledby="rooms-heading">
+              <div class="panel-heading">
+                <h3 id="rooms-heading">Estancias</h3>
+                <button id="add-room-small" class="icon-button" type="button" aria-label="Añadir estancia" title="Añadir estancia">+</button>
+              </div>
+              <div id="room-list" class="room-list"></div>
+            </section>
+
+            <section class="panel container-panel" aria-labelledby="containers-heading">
+              <div class="panel-heading container-heading">
+                <div>
+                  <p class="panel-kicker">DENTRO DE ESTA ESTANCIA</p>
+                  <h3 id="containers-heading">Elige una estancia</h3>
+                </div>
+                <button id="add-container" class="button button-secondary" type="button" disabled>+ Contenedor</button>
+              </div>
+              <div id="room-actions" class="room-actions" hidden>
+                <button id="rename-room" class="text-button" type="button">Renombrar estancia</button>
+                <span class="action-divider" aria-hidden="true">·</span>
+                <button id="delete-room" class="text-button text-button-danger" type="button">Eliminar estancia</button>
+              </div>
+              <div id="container-list" class="container-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="view-catalogo" class="view placeholder-view" aria-labelledby="catalog-title" hidden>
+          <div class="placeholder-card">
+            <span class="placeholder-icon" aria-hidden="true">◫</span>
+            <p class="eyebrow">CATÁLOGO</p>
+            <h1 id="catalog-title">Un producto, todas sus ubicaciones.</h1>
+            <p>Aquí podrás crear tipos y productos para añadirlos después a tus contenedores.</p>
+            <span class="soon-label">Disponible en la siguiente fase</span>
+          </div>
+        </section>
+
+        <section id="view-inventario" class="view placeholder-view" aria-labelledby="inventory-title" hidden>
+          <div class="placeholder-card">
+            <span class="placeholder-icon" aria-hidden="true">▤</span>
+            <p class="eyebrow">INVENTARIO</p>
+            <h1 id="inventory-title">Controla lo que tienes.</h1>
+            <p>Consulta cantidades, registra entradas y salidas y traslada productos entre espacios.</p>
+            <span class="soon-label">Disponible próximamente</span>
+          </div>
+        </section>
+
+        <section class="backup-panel" aria-labelledby="backup-heading">
+          <div>
+            <p class="eyebrow">COPIA Y TRASLADO MANUAL</p>
+            <h2 id="backup-heading">Tus datos, bajo tu control.</h2>
+            <p>Los cambios se guardan en este navegador. Descarga una copia JSON para recuperarlos o llevarlos a otro dispositivo.</p>
+            <p id="last-export" class="last-export">Aún no has exportado una copia.</p>
+          </div>
+          <div class="backup-actions">
+            <button id="export-json" class="button button-primary" type="button">Exportar JSON</button>
+            <button id="export-csv" class="button button-outline" type="button">Descargar CSV</button>
+            <button id="import-json" class="button button-outline" type="button">Importar JSON</button>
+            <input id="import-file" type="file" accept=".json,application/json" hidden />
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <span>Despensa</span>
+        <span>Una vivienda. Todo en su lugar.</span>
+      </footer>
+    </div>
+
+    <dialog id="edit-dialog" class="modal">
+      <form id="edit-form" method="dialog" novalidate>
+        <div class="modal-head">
+          <div><p id="edit-kicker" class="eyebrow">UBICACIONES</p><h2 id="edit-title">Nueva estancia</h2></div>
+          <button id="edit-close" type="button" class="close-button" aria-label="Cerrar">×</button>
+        </div>
+        <label id="name-field" class="field">
+          <span>Nombre</span>
+          <input id="edit-name" name="nombre" type="text" maxlength="80" autocomplete="off" required />
+        </label>
+        <label id="room-field" class="field" hidden>
+          <span>Estancia</span>
+          <select id="edit-room" name="estancia"></select>
+        </label>
+        <p id="edit-error" class="form-error" role="alert" hidden></p>
+        <div class="modal-actions">
+          <button id="edit-cancel" type="button" class="button button-outline">Cancelar</button>
+          <button id="edit-submit" type="submit" class="button button-primary">Guardar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="import-dialog" class="modal">
+      <div class="modal-head">
+        <div><p class="eyebrow">IMPORTAR JSON</p><h2>Reemplazar datos locales</h2></div>
+        <button id="import-close" type="button" class="close-button" aria-label="Cerrar">×</button>
+      </div>
+      <p id="import-summary" class="import-summary"></p>
+      <p class="import-warning">Esta acción sustituirá todo lo guardado en este navegador. Descarga antes una copia de los datos actuales si quieres conservarlos.</p>
+      <div class="modal-actions modal-actions-wrap">
+        <button id="import-backup" type="button" class="button button-outline">Descargar copia actual</button>
+        <button id="import-cancel" type="button" class="button button-outline">Cancelar</button>
+        <button id="import-confirm" type="button" class="button button-danger">Reemplazar datos</button>
+      </div>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>

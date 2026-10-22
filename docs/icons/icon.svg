@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Despensa">
+  <rect width="512" height="512" rx="116" fill="#153b32"/>
+  <path d="M139 104h104c93 0 155 59 155 151s-62 153-155 153H139V104zm96 74h-12v157h12c49 0 79-31 79-80s-30-77-79-77z" fill="#f7f3df"/>
+  <circle cx="387" cy="383" r="26" fill="#df9a46"/>
+</svg>

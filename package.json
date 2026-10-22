@@ -1,0 +1,9 @@
+{
+  "name": "despensa-personal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "serve": "node tools/serve.js"
+  }
+}
