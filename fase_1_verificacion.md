@@ -1,7 +1,7 @@
 # Fase 1 — Registro de implementación y verificación
 
 **Fecha:** 22 de octubre de 2026.  
-**Estado:** el usuario informó de una prueba satisfactoria de la primera entrega en navegador. La revisión de borrado en cascada y ajustes de tamaños de pantalla requiere nueva comprobación visual.
+**Estado:** el usuario informó de una prueba satisfactoria de la primera entrega. El borrado en cascada, el diseño adaptable, la exportación e importación JSON y la consulta sin conexión se comprobaron después en un Edge aislado mediante el protocolo de depuración del navegador.
 
 ## Implementado
 
@@ -23,18 +23,18 @@
 | Restaurar estructura mediante exportación e importación JSON. | Pasa en prueba de serialización y validación. |
 | Rechazar JSON inválido, referencias rotas y cantidades negativas. | Pasa en pruebas de dominio. |
 | Sintaxis de JavaScript y entrega HTTP de página y archivo de conexión. | Pasa con Node.js y servidor local. |
-| Crear y editar mediante la interfaz, cerrar y reabrir conservando datos, consulta sin red. | El usuario informó que la primera entrega funciona en su navegador. No se detallaron todos los escenarios de esta fila. |
-| Importación real sobre IndexedDB y exportación descargada. | Pendiente de prueba en navegador. |
-| Confirmación y borrado en cascada; diseño en móvil y tableta. | Pendiente de nueva prueba visual; el navegador automatizado no está disponible en este entorno. |
+| Crear Cocina, Nevera y Armario mediante la interfaz; recargar y conservarlos en IndexedDB. | Pasa en Edge aislado. |
+| Cancelar la confirmación de borrado y conservar los datos; aceptarla y borrar Cocina junto con sus dos contenedores. | Pasa en Edge aislado. La confirmación enumera los dos contenedores. |
+| Exportar JSON desde la interfaz; comprobar estructura y relaciones. Importar el archivo desde la interfaz con vista previa, sustitución de los datos locales y persistencia tras recarga. | Pasa en Edge aislado. Se comprobó el contenido generado para la descarga; no se verificó la operación del diálogo de descarga del sistema. |
+| Diseño a 1280, 768, 375 y 320 píxeles. | Pasa en Edge aislado: capturas revisadas y sin desbordamiento horizontal. No equivale a una prueba en dispositivos físicos. |
+| Consultar Cocina y Nevera tras detener el servidor y recargar; comprobar el estado sin conexión y el bloqueo de edición. | Pasa en Edge aislado, usando el service worker y los datos de IndexedDB. |
+| Edición de nombres y movimiento mediante la interfaz. | Pendiente de comprobación específica en navegador; las operaciones pasan las pruebas de dominio. |
 
 ## Revisión manual antes de aprobar la fase
 
-1. Ejecutar `node tools/serve.js` y abrir la aplicación en un navegador.
-2. Crear las estancias y contenedores del primer escenario. Renombrar y mover un contenedor.
-3. Recargar la página y comprobar que se conservan.
-4. Borrar Cocina. La confirmación debe indicar que también se borrarán Nevera y Armario; cancelarla y comprobar que todo sigue presente. Confirmarla y comprobar que Despensa y Estantería permanecen.
-5. Exportar el JSON, borrar los datos de prueba desde la interfaz e importarlo. Comprobar la vista previa, confirmar y revisar la restauración.
-6. Desconectar la red después de cargar la aplicación. Recargar: las ubicaciones deben verse y los cambios deben quedar bloqueados.
-7. Revisar en un móvil estrecho, una tableta y un ordenador que navegación, acciones, tarjetas, copias y diálogos se ajustan sin desbordamiento horizontal.
+1. Crear Despensa y Estantería, renombrar y mover un contenedor desde la interfaz.
+2. Comprobar en un móvil y una tableta físicos que los diálogos y las acciones táctiles son cómodos de usar.
+
+La pestaña integrada de ChatGPT no se expuso a esta sesión pese a estar abierta; por eso se usó un perfil aislado de Edge. La prueba no modificó los datos del navegador habitual del usuario.
 
 Las Fases 2 a 4 permanecen pendientes de la revisión prevista en `prompt_inical.md`.
