@@ -135,6 +135,62 @@ export function deleteContenedor(state, id) {
   return { ...state, contenedores: state.contenedores.filter((entry) => entry.id !== id) };
 }
 
+export function createTipo(state, { id, nombre }) {
+  requireId(id);
+  if (state.tipos.some((entry) => entry.id === id)) throw new DomainError("El identificador ya existe.");
+  const name = cleanName(nombre);
+  ensureUniqueName(state.tipos, name, null, "un tipo");
+  return { ...state, tipos: [...state.tipos, { id, nombre: name }] };
+}
+
+export function renameTipo(state, id, nombre) {
+  findById(state.tipos, id, "El tipo");
+  const name = cleanName(nombre);
+  ensureUniqueName(state.tipos, name, id, "un tipo");
+  return {
+    ...state,
+    tipos: state.tipos.map((entry) => entry.id === id ? { ...entry, nombre: name } : entry),
+  };
+}
+
+export function deleteTipo(state, id) {
+  findById(state.tipos, id, "El tipo");
+  if (state.productos.some((entry) => entry.tipoId === id)) {
+    throw new DomainError("Mueve o elimina los productos de este tipo antes de borrarlo.");
+  }
+  return { ...state, tipos: state.tipos.filter((entry) => entry.id !== id) };
+}
+
+export function createProducto(state, { id, tipoId, nombre }) {
+  requireId(id);
+  findById(state.tipos, tipoId, "El tipo");
+  if (state.productos.some((entry) => entry.id === id)) throw new DomainError("El identificador ya existe.");
+  const name = cleanName(nombre);
+  ensureUniqueName(state.productos, name, null, "un producto");
+  return { ...state, productos: [...state.productos, { id, tipoId, nombre: name }] };
+}
+
+export function updateProducto(state, id, { tipoId, nombre }) {
+  findById(state.productos, id, "El producto");
+  findById(state.tipos, tipoId, "El tipo");
+  const name = cleanName(nombre);
+  ensureUniqueName(state.productos, name, id, "un producto");
+  return {
+    ...state,
+    productos: state.productos.map((entry) =>
+      entry.id === id ? { ...entry, tipoId, nombre: name } : entry,
+    ),
+  };
+}
+
+export function deleteProducto(state, id) {
+  findById(state.productos, id, "El producto");
+  if (state.existencias.some((entry) => entry.productoId === id)) {
+    throw new DomainError("Retira las existencias de este producto antes de borrarlo.");
+  }
+  return { ...state, productos: state.productos.filter((entry) => entry.id !== id) };
+}
+
 function readCollection(input, key, mapEntry) {
   if (!Array.isArray(input[key])) throw new DomainError(`La colección «${key}» no es válida.`);
   return input[key].map((entry) => {

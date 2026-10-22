@@ -122,6 +122,28 @@ h1, h2, h3 { letter-spacing: -.04em; }
 .backup-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; max-width: 500px; }
 .site-footer { width: min(100%, 1220px); margin: auto; padding: 20px 28px 25px; border-top: 1px solid #e9ece5; display: flex; justify-content: space-between; color: #9aa69a; font-size: 11px; }
 
+.catalog-intro { padding: 30px 0 24px; }
+.catalog-intro h1 { margin: 0 0 9px; font-size: clamp(32px, 4vw, 46px); line-height: 1.1; }
+.catalog-intro > p:not(.eyebrow) { max-width: 580px; color: #687b6d; font-size: 15px; line-height: 1.6; }
+.catalog-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 22px; }
+.catalog-summary { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 23px; }
+.catalog-summary span { display: inline-flex; align-items: baseline; gap: 8px; min-width: 135px; padding: 14px 18px; border: 1px solid #e5eae1; border-radius: 12px; background: #fff; color: #66796c; font-size: 13px; }
+.catalog-summary strong { color: #204634; font-size: 23px; }
+.catalog-layout { grid-template-columns: minmax(235px, .8fr) minmax(0, 1.6fr); }
+.catalog-layout .panel-heading h2 { margin: 0; font-size: 19px; }
+.type-list { display: flex; flex-direction: column; gap: 5px; padding-top: 15px; }
+.type-item { width: 100%; display: flex; justify-content: space-between; gap: 12px; align-items: center; border: 1px solid transparent; border-radius: 10px; background: transparent; padding: 12px 13px; color: #315443; text-align: left; font-size: 14px; font-weight: 700; }
+.type-item:hover { background: #f7faf5; }
+.type-item.is-selected { background: #ecf4e9; border-color: #dce9dc; }
+.type-item span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.type-item span:last-child { flex: none; color: #7e9483; font-size: 12px; }
+.count-badge { flex: none; border-radius: 99px; padding: 6px 10px; background: #edf4ec; color: #4b7656; font-size: 12px; font-weight: 700; }
+.product-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding-top: 17px; }
+.product-card { min-width: 0; border: 1px solid #e5ebe1; border-radius: 12px; padding: 18px; background: #fcfdfa; }
+.product-card h3 { margin: 0 0 8px; font-size: 16px; overflow-wrap: anywhere; }
+.product-type { display: inline-block; border-radius: 99px; padding: 5px 9px; background: #f1f4e9; color: #688169; font-size: 11px; font-weight: 700; }
+.product-card .container-actions { margin-top: 15px; }
+
 .placeholder-view { min-height: 550px; display: grid; place-items: center; }
 .placeholder-card { width: min(100%, 560px); text-align: center; padding: 70px 28px; }
 .placeholder-icon { display: grid; place-items: center; width: 70px; height: 70px; border-radius: 19px; margin: 0 auto 21px; color: #477056; background: #e9f1e5; font-size: 33px; }
@@ -138,6 +160,7 @@ h1, h2, h3 { letter-spacing: -.04em; }
 .field { display: flex; flex-direction: column; gap: 8px; margin: 0 0 16px; color: #486453; font-size: 13px; font-weight: 700; }
 .field input, .field select { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #d9e3d9; border-radius: 9px; background: #fff; color: #1d3f30; font-size: 14px; }
 .form-error { border-radius: 8px; padding: 10px 12px; background: #fff2ee; color: #a5463e; font-size: 12px; }
+.similar-hint { margin: -6px 0 16px; color: #91622f; font-size: 12px; line-height: 1.5; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 23px; }
 .modal-actions-wrap { flex-wrap: wrap; }
 .modal-actions-wrap #import-backup { margin-right: auto; }
@@ -176,6 +199,9 @@ h1, h2, h3 { letter-spacing: -.04em; }
   .container-panel { min-height: 310px; }
   .backup-panel { padding: 22px; }
   .site-footer { padding: 18px 16px; flex-wrap: wrap; gap: 8px 20px; }
+  .catalog-intro { padding-top: 18px; }
+  .catalog-layout { grid-template-columns: 1fr; }
+  .type-panel { min-height: 0; }
 }
 
 @media (max-width: 440px) {
@@ -192,4 +218,7 @@ h1, h2, h3 { letter-spacing: -.04em; }
   .backup-panel { padding: 20px; }
   .modal-actions-wrap { justify-content: stretch; }
   .modal-actions-wrap .button { flex: 1 1 auto; }
+  .catalog-toolbar .button { flex: 1 1 100%; }
+  .catalog-summary span { flex: 1 1 0; min-width: 0; }
+  .product-list { grid-template-columns: 1fr; }
 }

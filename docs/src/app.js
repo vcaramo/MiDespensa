@@ -1,12 +1,18 @@
 import {
   createContenedor,
   createEstancia,
+  createProducto,
+  createTipo,
   deleteContenedor,
   deleteEstancia,
+  deleteProducto,
+  deleteTipo,
   moveContenedor,
   parseImportJson,
   renameContenedor,
   renameEstancia,
+  renameTipo,
+  updateProducto,
 } from "./domain.js";
 import { commitState, loadState, RevisionConflictError } from "./storage.js";
 
@@ -33,7 +39,11 @@ const ui = {
   editRoom: $("edit-room"),
   nameField: $("name-field"),
   roomField: $("room-field"),
+  typeField: $("type-field"),
+  editType: $("edit-type"),
+  editKicker: $("edit-kicker"),
   editError: $("edit-error"),
+  editSimilar: $("edit-similar"),
   editSubmit: $("edit-submit"),
   importDialog: $("import-dialog"),
   importSummary: $("import-summary"),
@@ -41,10 +51,23 @@ const ui = {
   importConfirm: $("import-confirm"),
   lastExport: $("last-export"),
   toast: $("toast"),
+  typeCount: $("type-count"),
+  productCount: $("product-count"),
+  typeList: $("type-list"),
+  typeActions: $("type-actions"),
+  renameType: $("rename-type"),
+  deleteType: $("delete-type"),
+  productsHeading: $("products-heading"),
+  filteredProductCount: $("filtered-product-count"),
+  productList: $("product-list"),
+  addType: $("add-type"),
+  addProduct: $("add-product"),
+  catalogOfflineHint: $("catalog-offline-hint"),
 };
 
 let state;
 let selectedRoomId = null;
+let selectedTypeId = null;
 let connected = false;
 let editMode = null;
 let pendingImport = null;
@@ -178,6 +201,81 @@ function renderContainers() {
   }
 }
 
+function renderTypes() {
+  ui.typeList.replaceChildren();
+  const allButton = document.createElement("button");
+  allButton.type = "button";
+  allButton.className = `type-item${selectedTypeId === null ? " is-selected" : ""}`;
+  allButton.setAttribute("aria-pressed", String(selectedTypeId === null));
+  allButton.append(document.createElement("span"), document.createElement("span"));
+  allButton.firstChild.textContent = "Todos los productos";
+  allButton.lastChild.textContent = String(state.productos.length);
+  allButton.addEventListener("click", () => { selectedTypeId = null; renderCatalog(); });
+  ui.typeList.append(allButton);
+  for (const type of [...state.tipos].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))) {
+    const count = state.productos.filter((entry) => entry.tipoId === type.id).length;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `type-item${selectedTypeId === type.id ? " is-selected" : ""}`;
+    button.setAttribute("aria-pressed", String(selectedTypeId === type.id));
+    const label = document.createElement("span");
+    label.textContent = type.nombre;
+    const number = document.createElement("span");
+    number.textContent = String(count);
+    number.setAttribute("aria-label", `${count} ${count === 1 ? "producto" : "productos"}`);
+    button.append(label, number);
+    button.addEventListener("click", () => { selectedTypeId = type.id; renderCatalog(); });
+    ui.typeList.append(button);
+  }
+  ui.typeActions.hidden = selectedTypeId === null;
+  ui.renameType.disabled = !connected;
+  ui.deleteType.disabled = !connected;
+}
+
+function renderProducts() {
+  const selectedType = state.tipos.find((entry) => entry.id === selectedTypeId);
+  ui.productsHeading.textContent = selectedType?.nombre ?? "Todos los productos";
+  const products = state.productos
+    .filter((entry) => !selectedType || entry.tipoId === selectedType.id)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  ui.filteredProductCount.textContent = `${products.length} ${products.length === 1 ? "producto" : "productos"}`;
+  ui.productList.replaceChildren();
+  if (!state.tipos.length) {
+    ui.productList.append(makeEmptyState("◇", "Empieza por un tipo", "Crea un tipo de producto para organizar tu catálogo."));
+    return;
+  }
+  if (!products.length) {
+    ui.productList.append(makeEmptyState("◇", "Aún no hay productos", "Añade un producto a este catálogo. No necesita tener existencias."));
+    return;
+  }
+  for (const product of products) {
+    const card = document.createElement("article");
+    card.className = "product-card";
+    const name = document.createElement("h3");
+    name.textContent = product.nombre;
+    const type = document.createElement("span");
+    type.className = "product-type";
+    type.textContent = state.tipos.find((entry) => entry.id === product.tipoId)?.nombre ?? "Tipo desconocido";
+    const actions = document.createElement("div");
+    actions.className = "container-actions";
+    actions.append(
+      makeButton("Editar", "text-button", () => openEditor("product-edit", product.id), !connected),
+      makeButton("Eliminar", "text-button text-button-danger", () => removeProduct(product.id), !connected),
+    );
+    card.append(name, type, actions);
+    ui.productList.append(card);
+  }
+}
+
+function renderCatalog() {
+  ui.typeCount.textContent = String(state.tipos.length);
+  ui.productCount.textContent = String(state.productos.length);
+  ui.addType.disabled = !connected;
+  ui.addProduct.disabled = !connected || state.tipos.length === 0;
+  renderTypes();
+  renderProducts();
+}
+
 function renderLastExport() {
   const value = localStorage.getItem("despensa-last-export");
   if (!value) {
@@ -195,6 +293,7 @@ function render() {
   if (!state.estancias.some((entry) => entry.id === selectedRoomId)) {
     selectedRoomId = state.estancias[0]?.id ?? null;
   }
+  if (!state.tipos.some((entry) => entry.id === selectedTypeId)) selectedTypeId = null;
   ui.roomCount.textContent = String(state.estancias.length);
   ui.containerCount.textContent = String(state.contenedores.length);
   ui.addRoomMain.disabled = !connected;
@@ -202,6 +301,7 @@ function render() {
   ui.importConfirm.disabled = !connected || importBusy;
   renderRooms();
   renderContainers();
+  renderCatalog();
   renderLastExport();
 }
 
@@ -211,6 +311,7 @@ function setConnection(value) {
   ui.connection.classList.remove("is-checking");
   ui.connectionText.textContent = value ? "Con conexión" : "Sin conexión";
   ui.offlineHint.hidden = value;
+  ui.catalogOfflineHint.hidden = value;
   render();
 }
 
@@ -259,30 +360,71 @@ function populateRoomSelect(selectedId) {
   }
 }
 
+function populateTypeSelect(selectedId) {
+  ui.editType.replaceChildren();
+  for (const type of [...state.tipos].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))) {
+    const option = document.createElement("option");
+    option.value = type.id;
+    option.textContent = type.nombre;
+    option.selected = type.id === selectedId;
+    ui.editType.append(option);
+  }
+}
+
+function updateSimilarHint() {
+  ui.editSimilar.hidden = true;
+  if (!editMode || !["product-create", "product-edit"].includes(editMode.mode)) return;
+  const candidate = ui.editName.value.trim().replace(/\s+/gu, " ").normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("es");
+  if (candidate.length < 4) return;
+  const similar = state.productos.find((entry) => {
+    if (entry.id === editMode.id) return false;
+    const existing = entry.nombre.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("es");
+    return existing !== candidate && (existing.includes(candidate) || candidate.includes(existing));
+  });
+  if (!similar) return;
+  ui.editSimilar.textContent = `Ya existe «${similar.nombre}». Comprueba si se trata del mismo producto.`;
+  ui.editSimilar.hidden = false;
+}
+
 function openEditor(mode, id = null) {
   if (!connected) return;
   editMode = { mode, id };
   ui.editError.hidden = true;
+  ui.editSimilar.hidden = true;
   ui.editName.value = "";
   ui.nameField.hidden = mode === "container-move";
   ui.roomField.hidden = !["container-create", "container-move"].includes(mode);
+  ui.typeField.hidden = !["product-create", "product-edit"].includes(mode);
+  ui.editKicker.textContent = mode.startsWith("type-") || mode.startsWith("product-") ? "CATÁLOGO" : "UBICACIONES";
   const titles = {
     "room-create": "Nueva estancia",
     "room-rename": "Renombrar estancia",
     "container-create": "Nuevo contenedor",
     "container-rename": "Renombrar contenedor",
     "container-move": "Mover contenedor",
+    "type-create": "Nuevo tipo",
+    "type-rename": "Renombrar tipo",
+    "product-create": "Nuevo producto",
+    "product-edit": "Editar producto",
   };
   ui.editTitle.textContent = titles[mode];
   ui.editSubmit.textContent = mode === "container-move" ? "Mover" : "Guardar";
   if (mode === "room-rename") ui.editName.value = state.estancias.find((entry) => entry.id === id)?.nombre ?? "";
   if (mode === "container-rename") ui.editName.value = state.contenedores.find((entry) => entry.id === id)?.nombre ?? "";
+  if (mode === "type-rename") ui.editName.value = state.tipos.find((entry) => entry.id === id)?.nombre ?? "";
+  if (mode === "product-create") populateTypeSelect(selectedTypeId ?? state.tipos[0]?.id);
+  if (mode === "product-edit") {
+    const product = state.productos.find((entry) => entry.id === id);
+    ui.editName.value = product?.nombre ?? "";
+    populateTypeSelect(product?.tipoId);
+  }
   if (mode === "container-create") populateRoomSelect(selectedRoomId);
   if (mode === "container-move") {
     const container = state.contenedores.find((entry) => entry.id === id);
     populateRoomSelect(container?.estanciaId);
   }
   ui.editDialog.showModal();
+  updateSimilarHint();
   (mode === "container-move" ? ui.editRoom : ui.editName).focus();
 }
 
@@ -294,6 +436,7 @@ async function submitEditor(event) {
   const { mode, id } = editMode;
   const name = ui.editName.value;
   const roomId = ui.editRoom.value;
+  const typeId = ui.editType.value;
   try {
     if (mode === "room-create") {
       const newId = crypto.randomUUID();
@@ -310,6 +453,19 @@ async function submitEditor(event) {
     } else if (mode === "container-move") {
       await saveChange((current) => moveContenedor(current, id, roomId), "Contenedor movido.");
       selectedRoomId = roomId;
+    } else if (mode === "type-create") {
+      const newId = crypto.randomUUID();
+      await saveChange((current) => createTipo(current, { id: newId, nombre: name }), "Tipo creado.");
+      selectedTypeId = newId;
+    } else if (mode === "type-rename") {
+      await saveChange((current) => renameTipo(current, id, name), "Tipo renombrado.");
+    } else if (mode === "product-create") {
+      const newId = crypto.randomUUID();
+      await saveChange((current) => createProducto(current, { id: newId, tipoId: typeId, nombre: name }), "Producto creado.");
+      selectedTypeId = typeId;
+    } else if (mode === "product-edit") {
+      await saveChange((current) => updateProducto(current, id, { tipoId: typeId, nombre: name }), "Producto actualizado.");
+      selectedTypeId = typeId;
     }
     ui.editDialog.close();
     editMode = null;
@@ -351,6 +507,36 @@ async function removeContainer(id) {
   if (!window.confirm(`¿Eliminar el contenedor «${container.nombre}»?`)) return;
   try {
     await saveChange((current) => deleteContenedor(current, id), "Contenedor eliminado.");
+  } catch (error) {
+    showError(error);
+  }
+}
+
+async function removeType() {
+  const type = state.tipos.find((entry) => entry.id === selectedTypeId);
+  if (!type) return;
+  if (state.productos.some((entry) => entry.tipoId === type.id)) {
+    showToast("Mueve o elimina sus productos antes de borrar el tipo.", true);
+    return;
+  }
+  if (!window.confirm(`¿Eliminar el tipo «${type.nombre}»? Esta acción no se puede deshacer.`)) return;
+  try {
+    await saveChange((current) => deleteTipo(current, type.id), "Tipo eliminado.");
+  } catch (error) {
+    showError(error);
+  }
+}
+
+async function removeProduct(id) {
+  const product = state.productos.find((entry) => entry.id === id);
+  if (!product) return;
+  if (state.existencias.some((entry) => entry.productoId === id)) {
+    showToast("Retira sus existencias antes de borrar el producto.", true);
+    return;
+  }
+  if (!window.confirm(`¿Eliminar el producto «${product.nombre}»? Esta acción no se puede deshacer.`)) return;
+  try {
+    await saveChange((current) => deleteProducto(current, id), "Producto eliminado.");
   } catch (error) {
     showError(error);
   }
@@ -416,6 +602,7 @@ async function confirmImport() {
     state = await commitState(state.revision, () => pendingImport);
     pendingImport = null;
     selectedRoomId = null;
+    selectedTypeId = null;
     ui.importDialog.close();
     render();
     showToast("Datos reemplazados e importados correctamente.");
@@ -454,6 +641,14 @@ function setupEvents() {
   ui.renameRoom.addEventListener("click", () => openEditor("room-rename", selectedRoomId));
   ui.deleteRoom.addEventListener("click", removeRoom);
   ui.editForm.addEventListener("submit", submitEditor);
+  ui.editName.addEventListener("input", () => {
+    ui.editError.hidden = true;
+    updateSimilarHint();
+  });
+  ui.addType.addEventListener("click", () => openEditor("type-create"));
+  ui.addProduct.addEventListener("click", () => openEditor("product-create"));
+  ui.renameType.addEventListener("click", () => openEditor("type-rename", selectedTypeId));
+  ui.deleteType.addEventListener("click", removeType);
   $("edit-close").addEventListener("click", () => ui.editDialog.close());
   $("edit-cancel").addEventListener("click", () => ui.editDialog.close());
   $("export-json").addEventListener("click", exportJson);

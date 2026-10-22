@@ -3,13 +3,19 @@ import assert from "node:assert/strict";
 import {
   createContenedor,
   createEstancia,
+  createProducto,
+  createTipo,
   deleteContenedor,
   deleteEstancia,
+  deleteProducto,
+  deleteTipo,
   emptyState,
   moveContenedor,
   parseImportJson,
   renameContenedor,
   renameEstancia,
+  renameTipo,
+  updateProducto,
   validateState,
 } from "../docs/src/domain.js";
 
@@ -94,4 +100,39 @@ test("rechaza JSON corrupto y referencias o cantidades inválidas", () => {
     existencias: [{ id: "existencia", productoId: "producto", contenedorId: "nevera", cantidad: -1 }],
   };
   assert.throws(() => validateState(withProduct), /cantidad inválida/);
+});
+
+test("crea tipos y productos sin existencias y conserva sus relaciones al cambiar nombres y tipo", () => {
+  let state = emptyState();
+  state = createTipo(state, { id: "lacteos", nombre: "Lácteos" });
+  state = createTipo(state, { id: "conservas", nombre: "Conservas" });
+  state = createProducto(state, { id: "leche", tipoId: "lacteos", nombre: "Leche entera" });
+  state = createProducto(state, { id: "atun", tipoId: "conservas", nombre: "Atún en conserva" });
+  state = renameTipo(state, "lacteos", "Lácteos y bebidas");
+  assert.equal(state.productos.find((item) => item.id === "leche").tipoId, "lacteos");
+  state = updateProducto(state, "atun", { tipoId: "lacteos", nombre: "Atún en aceite" });
+  assert.deepEqual(state.productos.find((item) => item.id === "atun"), {
+    id: "atun", tipoId: "lacteos", nombre: "Atún en aceite",
+  });
+  assert.equal(state.existencias.length, 0);
+  assert.deepEqual(parseImportJson(JSON.stringify(state)), validateState(state));
+});
+
+test("impide duplicados del catálogo y protege tipos y productos referenciados", () => {
+  let state = emptyState();
+  state = createTipo(state, { id: "lacteos", nombre: "Lácteos" });
+  state = createTipo(state, { id: "conservas", nombre: "Conservas" });
+  state = createProducto(state, { id: "leche", tipoId: "lacteos", nombre: "Leche entera" });
+  assert.throws(() => createTipo(state, { id: "duplicado", nombre: " LÁCTEOS " }), /Ya existe/);
+  assert.throws(() => createProducto(state, { id: "duplicado", tipoId: "conservas", nombre: "  LECHE   ENTERA " }), /Ya existe/);
+  assert.throws(() => deleteTipo(state, "lacteos"), /productos/);
+  const withStock = {
+    ...state,
+    existencias: [{ id: "stock", contenedorId: "nevera", productoId: "leche", cantidad: 2 }],
+  };
+  assert.throws(() => deleteProducto(withStock, "leche"), /existencias/);
+  state = deleteProducto(state, "leche");
+  state = deleteTipo(state, "lacteos");
+  assert.equal(state.productos.length, 0);
+  assert.equal(state.tipos.length, 1);
 });

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#153b32" />
-    <meta name="description" content="Organiza las estancias y contenedores de tu despensa." />
+    <meta name="description" content="Organiza las ubicaciones y el catálogo de tu despensa." />
     <title>Despensa · Tu hogar en orden</title>
     <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="./manifest.webmanifest" />
@@ -90,13 +90,41 @@
           </div>
         </section>
 
-        <section id="view-catalogo" class="view placeholder-view" aria-labelledby="catalog-title" hidden>
-          <div class="placeholder-card">
-            <span class="placeholder-icon" aria-hidden="true">◫</span>
-            <p class="eyebrow">CATÁLOGO</p>
-            <h1 id="catalog-title">Un producto, todas sus ubicaciones.</h1>
-            <p>Aquí podrás crear tipos y productos para añadirlos después a tus contenedores.</p>
-            <span class="soon-label">Disponible en la siguiente fase</span>
+        <section id="view-catalogo" class="view" aria-labelledby="catalog-title" hidden>
+          <div class="catalog-intro">
+            <p class="eyebrow">TUS PRODUCTOS, BIEN ORGANIZADOS</p>
+            <h1 id="catalog-title">Tu catálogo de productos.</h1>
+            <p>Define los productos una sola vez. Más adelante podrás colocarlos en cualquier contenedor.</p>
+            <div class="catalog-toolbar">
+              <button id="add-type" class="button button-secondary" type="button">+ Nuevo tipo</button>
+              <button id="add-product" class="button button-primary" type="button" disabled>+ Nuevo producto</button>
+              <span id="catalog-offline-hint" class="offline-hint" hidden>Sin conexión: puedes consultar, pero los cambios están pausados.</span>
+            </div>
+          </div>
+          <div class="catalog-summary" aria-label="Resumen del catálogo">
+            <span><strong id="type-count">0</strong> tipos</span>
+            <span><strong id="product-count">0</strong> productos</span>
+          </div>
+          <div class="locations-layout catalog-layout">
+            <section class="panel type-panel" aria-labelledby="types-heading">
+              <div class="panel-heading"><h2 id="types-heading">Tipos</h2></div>
+              <div id="type-list" class="type-list"></div>
+              <div id="type-actions" class="room-actions" hidden>
+                <button id="rename-type" class="text-button" type="button">Renombrar tipo</button>
+                <span class="action-divider" aria-hidden="true">·</span>
+                <button id="delete-type" class="text-button text-button-danger" type="button">Eliminar tipo</button>
+              </div>
+            </section>
+            <section class="panel product-panel" aria-labelledby="products-heading">
+              <div class="panel-heading container-heading">
+                <div>
+                  <p class="panel-kicker">PRODUCTOS REGISTRADOS</p>
+                  <h2 id="products-heading">Todos los productos</h2>
+                </div>
+                <span id="filtered-product-count" class="count-badge">0 productos</span>
+              </div>
+              <div id="product-list" class="product-list"></div>
+            </section>
           </div>
         </section>
 
@@ -142,9 +170,14 @@
           <span>Nombre</span>
           <input id="edit-name" name="nombre" type="text" maxlength="80" autocomplete="off" required />
         </label>
+        <p id="edit-similar" class="similar-hint" hidden></p>
         <label id="room-field" class="field" hidden>
           <span>Estancia</span>
           <select id="edit-room" name="estancia"></select>
+        </label>
+        <label id="type-field" class="field" hidden>
+          <span>Tipo de producto</span>
+          <select id="edit-type" name="tipo"></select>
         </label>
         <p id="edit-error" class="form-error" role="alert" hidden></p>
         <div class="modal-actions">

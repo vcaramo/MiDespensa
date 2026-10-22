@@ -86,4 +86,4 @@ Antes de dar una fase por terminada se comprobarán sus criterios. No se declara
 | IndexedDB, Service Worker, JavaScript modular y CSV legible. | Propuesta técnica concreta para implementar las decisiones anteriores. |
 | Cuentas, perfiles, datos compartidos y 30 copias automáticas diarias. | Aplazadas expresamente para una versión posterior. |
 
-**Fase 0:** definición revisada para la primera versión. **Fase 1:** implementación local preparada para revisión; las comprobaciones ejecutadas y pendientes constan en `fase_1_verificacion.md`. La Fase 2 espera la revisión de la Fase 1.
+**Fase 0:** definición revisada para la primera versión. **Fase 1:** ubicaciones implementadas y verificadas según `fase_1_verificacion.md`. **Fase 2:** catálogo implementado y probado según `fase_2_verificacion.md`; preparado para revisión del usuario. **Fase 3:** inventario de cantidades pendiente.

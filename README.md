@@ -1,6 +1,6 @@
 # Despensa
 
-Aplicación personal de despensa para una vivienda. Esta entrega implementa la **Fase 1: ubicaciones**. Puedes crear, renombrar y mover contenedores. Al eliminar una estancia, una confirmación indica cuántos contenedores vacíos se borrarán con ella; si contienen existencias, el borrado se bloquea. La interfaz se adapta a móvil, tableta y ordenador. El catálogo y el inventario están señalados como próximas fases.
+Aplicación personal de despensa para una vivienda. Están implementadas las **ubicaciones y el catálogo**. Puedes crear, renombrar y mover contenedores; crear tipos y productos; cambiar el tipo de un producto y consultar productos por tipo. Un producto puede existir sin unidades almacenadas. Se bloquea el borrado de tipos con productos y de productos con existencias. Al eliminar una estancia, una confirmación indica cuántos contenedores vacíos se borrarán con ella; si contienen existencias, el borrado se bloquea. La interfaz se adapta a móvil, tableta y ordenador. El inventario de cantidades es la siguiente fase.
 
 ## Abrirla en local
 
@@ -28,4 +28,4 @@ La consulta de datos guardados funciona sin conexión después de cargar la apli
 
 Los archivos publicables están en `docs/`. En la configuración del repositorio, elige **Deploy from a branch**, la rama que uses y la carpeta **`/docs`**. El repositorio de GitHub Pages personal gratuito puede ser público: confirma que solo subes código y datos ficticios. La publicación aún no se ha realizado.
 
-La definición, decisiones y fases están en [fase_0_analisis.md](fase_0_analisis.md). Las comprobaciones de esta entrega están en [fase_1_verificacion.md](fase_1_verificacion.md).
+La definición, decisiones y fases están en [fase_0_analisis.md](fase_0_analisis.md). Las comprobaciones están en [fase_1_verificacion.md](fase_1_verificacion.md) y [fase_2_verificacion.md](fase_2_verificacion.md).
