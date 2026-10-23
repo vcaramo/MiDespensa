@@ -207,12 +207,15 @@ h1, h2, h3 { letter-spacing: -.04em; }
   .backup-actions { justify-content: flex-start; max-width: none; }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 850px) {
   .header-inner { min-height: auto; padding: 13px 18px 0; flex-wrap: wrap; gap: 10px; }
   .brand { margin-right: auto; }
   .brand-text { font-size: 22px; }
   .connection-status { order: 2; margin-left: 0; }
   .primary-nav { width: 100%; height: 45px; order: 3; gap: 26px; overflow-x: auto; }
+}
+
+@media (max-width: 700px) {
   .main-content { padding: 18px 16px 35px; }
   .hero { min-height: 240px; padding: 32px 25px; }
   .hero-illustration { right: -135px; top: 17px; }
