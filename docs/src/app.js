@@ -115,6 +115,7 @@ let connected = false;
 let editMode = null;
 let pendingImport = null;
 let importBusy = false;
+let lastExportAt = null;
 let toastTimeout;
 let stockMode = null;
 
@@ -441,7 +442,7 @@ function renderInventory() {
 }
 
 function renderLastExport() {
-  const value = localStorage.getItem("despensa-last-export");
+  const value = lastExportAt;
   if (!value) {
     ui.lastExport.textContent = "Aún no has exportado una copia.";
     return;
@@ -484,7 +485,7 @@ function setConnection(value) {
 
 async function checkConnection() {
   try {
-    const url = new URL("./health.txt", location.href);
+    const url = new URL("./api/health", location.href);
     url.searchParams.set("t", String(Date.now()));
     const response = await fetch(url, { cache: "no-store", redirect: "error" });
     const body = response.ok ? (await response.text()).trim() : "";
@@ -497,7 +498,20 @@ async function checkConnection() {
 
 async function requireConnection() {
   if (!(await checkConnection())) {
-    throw new Error("Necesitas conexión para guardar cambios. Los datos de este dispositivo siguen disponibles para consulta.");
+    throw new Error("Necesitas conexión con el servidor para consultar y guardar los datos.");
+  }
+}
+
+async function refreshState() {
+  if (!(await checkConnection())) return;
+  try {
+    const latest = await loadState();
+    if (!state || latest.revision > state.revision) {
+      state = latest;
+      render();
+    }
+  } catch {
+    setConnection(false);
   }
 }
 
@@ -856,7 +870,7 @@ function exportJson() {
   if (!state) return;
   const document = { ...state, exportedAt: new Date().toISOString() };
   downloadFile(JSON.stringify(document, null, 2), `despensa-${fileDate()}.json`, "application/json");
-  localStorage.setItem("despensa-last-export", new Date().toISOString());
+  lastExportAt = new Date().toISOString();
   renderLastExport();
   showToast("Copia JSON descargada. Guárdala fuera del navegador.");
 }
@@ -986,13 +1000,13 @@ function setupEvents() {
   $("import-cancel").addEventListener("click", () => ui.importDialog.close());
   $("import-backup").addEventListener("click", exportJson);
   ui.importConfirm.addEventListener("click", confirmImport);
-  window.addEventListener("online", checkConnection);
+  window.addEventListener("online", refreshState);
   window.addEventListener("offline", () => setConnection(false));
-  window.addEventListener("focus", checkConnection);
+  window.addEventListener("focus", refreshState);
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) checkConnection();
+    if (!document.hidden) refreshState();
   });
-  setInterval(() => { if (!document.hidden) checkConnection(); }, 45_000);
+  setInterval(() => { if (!document.hidden) refreshState(); }, 45_000);
 }
 
 async function start() {

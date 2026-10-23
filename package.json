@@ -4,6 +4,13 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "serve": "node tools/serve.js"
+    "serve": "node tools/serve.js",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "jose": "^6.2.13"
+  },
+  "devDependencies": {
+    "wrangler": "^4.152.0"
   }
 }

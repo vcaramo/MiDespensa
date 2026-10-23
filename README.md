@@ -1,39 +1,33 @@
-# Despensa
+# MiDespensa
 
-Aplicación personal de despensa para una vivienda. Incluye **ubicaciones, catálogo, inventario y lista de la compra**. Puedes registrar unidades enteras, retirarlas sin superar el saldo y trasladarlas entre contenedores. Al retirar las últimas unidades de un producto, puedes añadirlo a la lista de la compra e indicar cuántas quieres reponer. La lista sugiere productos del catálogo mientras escribes; si no existe uno, puedes crearlo desde allí con una categoría existente o nueva. Al guardar una compra, indicas la cantidad real aunque supere la prevista: las unidades pasan a **Sin asignar** y después puedes moverlas a un contenedor. Si compras menos, el resto permanece pendiente. El borrado de ubicaciones o productos se bloquea cuando tienen existencias o compras asociadas. La interfaz se adapta a móvil, tableta y ordenador.
+Despensa personal con ubicaciones, catálogo, inventario y lista de la compra. La aplicación abre en Inventario y permite incorporar compras sin asignarles un contenedor. Incluye un catálogo inicial de 100 productos.
 
-La aplicación abre en **Inventario**. **Lista de la compra** es la segunda pestaña, seguida de Ubicaciones y Catálogo.
+## Datos compartidos
 
-## Abrirla en local
+La versión de la rama `desarrollo` sirve la web y una API desde un mismo Cloudflare Worker. El documento completo se guarda como JSON en un único Durable Object con almacenamiento SQLite. Todos los dispositivos autorizados leen ese mismo documento. Cada escritura comprueba la revisión anterior: si otro dispositivo guardó primero, la app recarga los datos y pide repetir el cambio. Los JSON exportados siguen sirviendo como copia restaurable; importar uno sustituye los datos compartidos después de una vista previa y confirmación.
 
-Requiere Node.js. Desde esta carpeta:
+El inventario **no se guarda en IndexedDB ni en localStorage**. La interfaz puede seguir abierta al perder la conexión, pero su vista puede quedar desactualizada; tras recargar sin conexión no se puede consultar el inventario. Los archivos de la interfaz pueden quedar en la caché del navegador; `/api/*` nunca se almacena en el Service Worker.
 
-```sh
-node tools/serve.js
-```
+## Pruebas locales
 
-Abre `http://127.0.0.1:4173/`. No conviene abrir `docs/index.html` como archivo: IndexedDB, el Service Worker y la comprobación de conexión necesitan un origen HTTP o HTTPS.
+Requiere Node.js. Ejecuta `npm install` y después `npm run serve`. La web queda en `http://127.0.0.1:4173/`. La configuración `wrangler.dev.jsonc` usa un punto de entrada exclusivo para pruebas y solo admite `localhost` y `127.0.0.1`. El Worker de producción (`wrangler.jsonc`) siempre exige un token de Cloudflare Access válido para la API. Los datos de prueba de Wrangler quedan en `.wrangler/`, excluido de Git.
 
-Para ejecutar las pruebas de reglas de datos:
+Para las reglas de datos: `npm test`.
 
-```sh
-node --test
-```
+## Publicar en Cloudflare
 
-## Datos y copias
+1. Crea o usa una cuenta Cloudflare con Workers y Zero Trust. El repositorio GitHub continúa guardando solo código y el catálogo inicial, nunca inventarios reales.
+2. Desde el proyecto, ejecuta `npm install` y `npx wrangler login`. Después, `npm run deploy` crea el Worker `midespensa` con los archivos de `docs/` y el Durable Object. Si el nombre ya está ocupado en tu cuenta, cambia `name` en `wrangler.jsonc` antes del despliegue.
+3. En **Workers & Pages > midespensa > Access**, protege **previews y producción** y permite únicamente las direcciones de correo que vayan a usar la aplicación. No elijas una política de dominio completo si no quieres dar acceso a todas las personas de ese dominio.
+4. En **Zero Trust > Access controls > Applications**, abre la aplicación de Access creada y copia su **Application Audience (AUD) Tag**. Anota también el nombre de equipo de la URL `https://NOMBRE.cloudflareaccess.com`. Configura en las variables del Worker `ACCESS_AUD` con el AUD y `ACCESS_TEAM_DOMAIN` con ese nombre de equipo. También puedes usar `npx wrangler secret put ACCESS_AUD` y `npx wrangler secret put ACCESS_TEAM_DOMAIN`. Vuelve a desplegar si modificaste `wrangler.jsonc`.
+5. Abre la URL `https://midespensa.<tu-subdominio>.workers.dev/` y verifica que solicita la identificación de Access y que aparece el catálogo inicial. Hasta configurar Access y ambas variables, la API responde 403 y no entrega el inventario.
 
-Los cambios se guardan automáticamente en IndexedDB de **cada navegador y dispositivo**. La web no tiene servidor de datos ni sincronización. Usa **Exportar JSON** para descargar una copia restaurable y **Importar JSON** para transferirla a otro dispositivo. La importación valida el archivo y muestra una vista previa antes de reemplazar todos los datos locales. Las copias anteriores siguen siendo compatibles; se importan con la lista de la compra vacía. **Descargar CSV** genera una tabla legible de ubicaciones, catálogo, existencias y compras pendientes.
+Cloudflare Access protege toda la web. Además, el Worker verifica la firma, emisor y audiencia del token de Access en cada petición a la API. Los datos están asociados al Durable Object del Worker; redeplegar el mismo Worker conserva el documento. No borres el Worker ni su almacenamiento sin una copia JSON exportada.
 
-La consulta de datos guardados funciona sin conexión después de cargar la aplicación al menos una vez; las modificaciones y la importación requieren conexión con el sitio. El navegador puede borrar su almacenamiento local, así que conserva los JSON fuera de él. No subas tus exportaciones reales al repositorio público.
+## Pasar los datos actuales
 
-## Catálogo inicial
+La aplicación publicada anteriormente en GitHub Pages usa IndexedDB en cada navegador. Abre esa versión en el dispositivo que tenga tus datos más recientes y pulsa **Exportar JSON**. En la nueva URL de Cloudflare, pulsa **Importar JSON**, revisa el resumen y confirma. El archivo reemplaza el catálogo inicial y pasa a ser el documento compartido. Verifica el inventario desde un segundo dispositivo antes de borrar los datos antiguos del navegador. Si diferentes dispositivos tienen cambios propios, exporta cada uno antes de elegir qué copia importar; la importación no fusiona inventarios.
 
-El archivo [catalogo-inicial.json](docs/catalogo-inicial.json) forma parte de la web y contiene **100 productos en 11 tipos**, sin estancias, contenedores ni existencias. La aplicación incorpora ese catálogo automáticamente al primer uso. Si ya hay ubicaciones guardadas y el catálogo está vacío, añade los productos sin borrar las ubicaciones. Si ya existe un catálogo propio, lo conserva. Después puedes añadir, renombrar o eliminar productos y tipos; el catálogo inicial no reaparece si vacías el tuyo.
+El catálogo inicial está en [docs/catalogo-inicial.json](docs/catalogo-inicial.json). Para regenerarlo tras modificar su lista, ejecuta `node tools/generate-starter.js`.
 
-**Importar JSON** sigue sirviendo para restaurar o trasladar copias entre dispositivos y sustituye todos los datos locales tras confirmación. Para regenerar el archivo inicial tras editar su lista, ejecuta `node tools/generate-starter.js`.
-
-## Publicar con GitHub Pages
-
-Los archivos publicables están en `docs/`. En la configuración del repositorio, elige **Deploy from a branch**, la rama que uses y la carpeta **`/docs`**. El repositorio de GitHub Pages personal gratuito puede ser público: confirma que solo subes código y datos ficticios. La publicación aún no se ha realizado.
-
-La definición y decisiones están en [fase_0_analisis.md](fase_0_analisis.md). Las comprobaciones están en [fase_1_verificacion.md](fase_1_verificacion.md), [fase_2_verificacion.md](fase_2_verificacion.md) y [fase_3_verificacion.md](fase_3_verificacion.md).
+La rama `main` continúa siendo el despliegue de GitHub Pages hasta que se apruebe la nueva versión. La documentación histórica de decisiones y comprobaciones se conserva en los archivos `fase_*.md`.

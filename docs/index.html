@@ -41,7 +41,7 @@
               <p class="hero-description">Organiza tus espacios y encuentra fácilmente dónde guardas cada producto.</p>
               <div class="hero-actions">
                 <button id="add-room-main" class="button button-primary" type="button">+ Nueva estancia</button>
-                <span id="offline-hint" class="offline-hint" hidden>Sin conexión: puedes consultar, pero los cambios están pausados.</span>
+                <span id="offline-hint" class="offline-hint" hidden>Sin conexión con el servidor: la vista puede estar desactualizada.</span>
               </div>
             </div>
             <div class="hero-illustration" aria-hidden="true">
@@ -99,7 +99,7 @@
             <div class="catalog-toolbar">
               <button id="add-type" class="button button-secondary" type="button">+ Nuevo tipo</button>
               <button id="add-product" class="button button-primary" type="button" disabled>+ Nuevo producto</button>
-              <span id="catalog-offline-hint" class="offline-hint" hidden>Sin conexión: puedes consultar, pero los cambios están pausados.</span>
+              <span id="catalog-offline-hint" class="offline-hint" hidden>Sin conexión con el servidor: la vista puede estar desactualizada.</span>
             </div>
           </div>
           <div class="catalog-summary" aria-label="Resumen del catálogo">
@@ -136,7 +136,7 @@
             <p>Registra lo que tienes y asígnale un contenedor cuando quieras.</p>
             <div class="catalog-toolbar">
               <button id="add-stock" class="button button-primary" type="button">+ Añadir existencias</button>
-              <span id="inventory-offline-hint" class="offline-hint" hidden>Sin conexión: puedes consultar, pero los cambios están pausados.</span>
+              <span id="inventory-offline-hint" class="offline-hint" hidden>Sin conexión con el servidor: la vista puede estar desactualizada.</span>
             </div>
           </div>
           <div class="catalog-summary" aria-label="Resumen de inventario">
@@ -156,7 +156,7 @@
             <p class="eyebrow">PLANIFICA TUS COMPRAS</p>
             <h1 id="shopping-title">Lista de la compra.</h1>
             <p>Busca productos del catálogo o crea uno nuevo mientras preparas la lista.</p>
-            <span id="shopping-offline-hint" class="offline-hint" hidden>Sin conexión: puedes consultar, pero los cambios están pausados.</span>
+            <span id="shopping-offline-hint" class="offline-hint" hidden>Sin conexión con el servidor: la vista puede estar desactualizada.</span>
           </div>
           <div class="catalog-summary" aria-label="Resumen de la compra">
             <span><strong id="shopping-total">0</strong> unidades pendientes</span>
@@ -183,9 +183,9 @@
 
         <section class="backup-panel" aria-labelledby="backup-heading">
           <div>
-            <p class="eyebrow">COPIA Y TRASLADO MANUAL</p>
+            <p class="eyebrow">COPIA MANUAL</p>
             <h2 id="backup-heading">Tus datos, bajo tu control.</h2>
-            <p>Los cambios se guardan en este navegador. Descarga una copia JSON para recuperarlos o llevarlos a otro dispositivo.</p>
+            <p>Los cambios se guardan en un JSON compartido en el servidor. Descarga una copia JSON para poder restaurarlos.</p>
             <p id="last-export" class="last-export">Aún no has exportado una copia.</p>
           </div>
           <div class="backup-actions">
@@ -248,11 +248,11 @@
 
     <dialog id="import-dialog" class="modal">
       <div class="modal-head">
-        <div><p class="eyebrow">IMPORTAR JSON</p><h2>Reemplazar datos locales</h2></div>
+        <div><p class="eyebrow">IMPORTAR JSON</p><h2>Reemplazar datos compartidos</h2></div>
         <button id="import-close" type="button" class="close-button" aria-label="Cerrar">×</button>
       </div>
       <p id="import-summary" class="import-summary"></p>
-      <p class="import-warning">Esta acción sustituirá todo lo guardado en este navegador. Descarga antes una copia de los datos actuales si quieres conservarlos.</p>
+      <p class="import-warning">Esta acción sustituirá los datos compartidos de todos los dispositivos. Descarga antes una copia de los datos actuales si quieres conservarlos.</p>
       <div class="modal-actions modal-actions-wrap">
         <button id="import-backup" type="button" class="button button-outline">Descargar copia actual</button>
         <button id="import-cancel" type="button" class="button button-outline">Cancelar</button>

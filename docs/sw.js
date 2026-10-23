@@ -1,4 +1,4 @@
-const CACHE_NAME = "despensa-v11";
+const CACHE_NAME = "despensa-v12";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -31,7 +31,7 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
-  if (url.pathname.endsWith("/health.txt")) {
+  if (url.pathname.startsWith("/api/")) {
     event.respondWith(fetch(request));
     return;
   }
