@@ -4,6 +4,7 @@ import {
   addShoppingItem,
   addStock,
   completeShoppingItem,
+  consumeStock,
   createContenedor,
   createEstancia,
   createProducto,
@@ -66,6 +67,30 @@ test("entradas, salidas y traslados mantienen una sola existencia por producto y
   assert.equal(state.existencias.length, 1);
   assert.throws(() => moveStock(state, { id: "stock3", productoId: "leche", fromContainerId: "nevera", toContainerId: "nevera", cantidad: 1 }), /otro contenedor/);
   assert.equal(validateState(state).existencias[0].cantidad, 5);
+});
+
+test("al agotar un producto puede añadirlo a la compra en la misma operación", () => {
+  let state = createProducto(createTipo(exampleState(), { id: "tipo", nombre: "Lácteos" }), { id: "leche", tipoId: "tipo", nombre: "Leche" });
+  state = addStock(state, { id: "stock", productoId: "leche", contenedorId: "nevera", cantidad: 2 });
+  assert.throws(() => consumeStock(state, { productoId: "leche", contenedorId: "nevera", cantidad: 3, shoppingId: "compra", shoppingQuantity: 4 }), /suficientes/);
+  state = consumeStock(state, { productoId: "leche", contenedorId: "nevera", cantidad: 2, shoppingId: "compra", shoppingQuantity: 4 });
+  assert.deepEqual(state.existencias, []);
+  assert.deepEqual(state.compras, [{ id: "compra", productoId: "leche", cantidad: 4 }]);
+  state = addStock(state, { id: "stock2", productoId: "leche", contenedorId: "armario", cantidad: 1 });
+  assert.throws(() => consumeStock(state, { productoId: "leche", contenedorId: "armario", cantidad: 1, shoppingId: "otra", shoppingQuantity: 0 }), /cantidad/);
+  state = consumeStock(state, { productoId: "leche", contenedorId: "armario", cantidad: 1, shoppingId: "otra", shoppingQuantity: 2 });
+  assert.deepEqual(state.compras, [{ id: "compra", productoId: "leche", cantidad: 6 }]);
+  assert.deepEqual(parseImportJson(JSON.stringify(state)), state);
+});
+
+test("solo ofrece reposición cuando no quedan unidades en otros contenedores", () => {
+  let state = createProducto(createTipo(exampleState(), { id: "tipo", nombre: "Lácteos" }), { id: "leche", tipoId: "tipo", nombre: "Leche" });
+  state = addStock(state, { id: "uno", productoId: "leche", contenedorId: "nevera", cantidad: 1 });
+  state = addStock(state, { id: "dos", productoId: "leche", contenedorId: "armario", cantidad: 1 });
+  assert.throws(() => consumeStock(state, { productoId: "leche", contenedorId: "nevera", cantidad: 1, shoppingId: "compra", shoppingQuantity: 1 }), /Todavía quedan/);
+  state = consumeStock(state, { productoId: "leche", contenedorId: "nevera", cantidad: 1 });
+  assert.deepEqual(state.compras, []);
+  assert.equal(state.existencias.length, 1);
 });
 
 test("la compra agrega cantidades, permite recepción parcial y protege el producto", () => {

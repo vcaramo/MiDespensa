@@ -8,6 +8,7 @@
 - Los productos añadidos de nuevo a la lista acumulan sus unidades pendientes.
 - Al guardar una compra, entra en el inventario sin contenedor. Se permite registrar una parte y mantener el resto pendiente. Las unidades sin asignar se pueden mover después a un contenedor.
 - Si se compran más unidades que las previstas, entra la cantidad real y el producto deja de figurar como pendiente.
+- Al retirar las últimas unidades de un producto aparece la opción de añadirlo a la lista de la compra y elegir cuántas reponer. Si ya está en la lista, se acumulan las cantidades.
 - El JSON local y las copias exportadas incluyen la lista de la compra. Los JSON anteriores, sin ese campo, siguen siendo importables.
 - CSV legible con ubicaciones, catálogo, existencias y compras pendientes.
 
@@ -19,6 +20,7 @@
 - Recarga del navegador: los datos de prueba permanecieron en el almacenamiento local.
 - En el navegador local: una compra se guardó en «Sin asignar» y después se movió al contenedor «Cocina · Nevera».
 - En el navegador local: con 1 unidad pendiente de leche se registraron 4 compradas; el inventario mostró 4 unidades nuevas sin asignar y 0 pendientes.
+- En el navegador local: al retirar la última unidad de salsa apareció la opción de añadirla a la compra; se solicitaron 3 unidades y la lista mostró 3 pendientes. Al retirar de un contenedor todas sus unidades de leche mientras quedaba leche en otro, la opción no apareció.
 
 ## Alcance de esta versión
 

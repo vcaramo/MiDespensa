@@ -4,6 +4,7 @@ import {
   canonicalName,
   cleanName,
   completeShoppingItem,
+  consumeStock,
   createContenedor,
   createEstancia,
   createProducto,
@@ -19,7 +20,6 @@ import {
   renameEstancia,
   renameTipo,
   removeShoppingItem,
-  removeStock,
   updateProducto,
 } from "./domain.js";
 import { commitState, loadState, RevisionConflictError } from "./storage.js";
@@ -99,6 +99,10 @@ const ui = {
   stockTarget: $("stock-target"),
   stockQuantity: $("stock-quantity"),
   stockQuantityLabel: $("stock-quantity-label"),
+  stockRestockField: $("stock-restock-field"),
+  stockRestock: $("stock-restock"),
+  stockRestockQuantityField: $("stock-restock-quantity-field"),
+  stockRestockQuantity: $("stock-restock-quantity"),
   stockError: $("stock-error"),
   stockSubmit: $("stock-submit"),
 };
@@ -516,6 +520,20 @@ function fillSelect(select, entries, selectedId) {
   if (selectedId && entries.some((entry) => entry.id === selectedId)) select.value = selectedId;
 }
 
+function updateRestockOffer() {
+  if (stockMode?.mode !== "remove") {
+    ui.stockRestockField.hidden = true;
+    return;
+  }
+  const { item } = stockMode;
+  const quantity = Number(ui.stockQuantity.value);
+  const productTotal = state.existencias.filter((entry) => entry.productoId === item.productoId).reduce((total, entry) => total + entry.cantidad, 0);
+  const willDeplete = Number.isSafeInteger(quantity) && quantity > 0 && quantity === productTotal && quantity <= item.cantidad;
+  ui.stockRestockField.hidden = !willDeplete;
+  if (!willDeplete) ui.stockRestock.checked = false;
+  ui.stockRestockQuantityField.hidden = !willDeplete || !ui.stockRestock.checked;
+}
+
 function openStockDialog(mode, item = null) {
   if (!connected) return;
   stockMode = { mode, item };
@@ -534,6 +552,9 @@ function openStockDialog(mode, item = null) {
   ];
   fillSelect(ui.stockTarget, mode === "move" ? destinations.filter((entry) => (entry.id || null) !== item.contenedorId) : destinations, mode === "add" ? item?.contenedorId : null);
   ui.stockQuantity.value = String(mode === "purchase" ? item.cantidad : 1);
+  ui.stockRestock.checked = false;
+  ui.stockRestockQuantity.value = "1";
+  updateRestockOffer();
   ui.stockDialog.showModal();
   (mode === "add" ? ui.stockProduct : ui.stockQuantity).focus();
 }
@@ -549,11 +570,14 @@ async function submitStock(event) {
   const contenedorId = mode === "add" ? ui.stockTarget.value || null : item.contenedorId;
   const targetId = ui.stockTarget.value || null;
   const newId = crypto.randomUUID();
+  const shoppingId = crypto.randomUUID();
+  const shoppingQuantity = mode === "remove" && ui.stockRestock.checked && !ui.stockRestockField.hidden
+    ? Number(ui.stockRestockQuantity.value) : null;
   try {
     if (mode === "add") {
       await saveChange((current) => addStock(current, { id: newId, productoId, contenedorId, cantidad }), "Existencias añadidas.");
     } else if (mode === "remove") {
-      await saveChange((current) => removeStock(current, { productoId, contenedorId, cantidad }), "Unidades retiradas.");
+      await saveChange((current) => consumeStock(current, { productoId, contenedorId, cantidad, shoppingId, shoppingQuantity }), shoppingQuantity === null ? "Unidades retiradas." : "Unidades retiradas y producto añadido a la lista de la compra.");
     } else if (mode === "move") {
       await saveChange((current) => moveStock(current, { id: newId, productoId, fromContainerId: contenedorId, toContainerId: targetId, cantidad }), "Unidades trasladadas.");
     } else if (mode === "purchase") {
@@ -934,6 +958,8 @@ function setupEvents() {
   ui.deleteType.addEventListener("click", removeType);
   ui.addStock.addEventListener("click", () => openStockDialog("add"));
   ui.stockForm.addEventListener("submit", submitStock);
+  ui.stockQuantity.addEventListener("input", updateRestockOffer);
+  ui.stockRestock.addEventListener("change", updateRestockOffer);
   $("stock-close").addEventListener("click", () => ui.stockDialog.close());
   $("stock-cancel").addEventListener("click", () => ui.stockDialog.close());
   ui.shoppingForm.addEventListener("submit", submitShopping);

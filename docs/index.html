@@ -223,6 +223,10 @@
         <label id="stock-product-field" class="field"><span>Producto</span><select id="stock-product"></select></label>
         <label id="stock-target-field" class="field"><span id="stock-target-label">Contenedor</span><select id="stock-target"></select></label>
         <label class="field"><span id="stock-quantity-label">Unidades</span><input id="stock-quantity" type="number" min="1" step="1" value="1" required /></label>
+        <div id="stock-restock-field" class="restock-field" hidden>
+          <label class="restock-choice"><input id="stock-restock" type="checkbox" /><span>Añadir este producto a la lista de la compra al agotarlo</span></label>
+          <label id="stock-restock-quantity-field" class="field" hidden><span>Unidades que quieres comprar</span><input id="stock-restock-quantity" type="number" min="1" step="1" value="1" /></label>
+        </div>
         <p id="stock-error" class="form-error" role="alert" hidden></p>
         <div class="modal-actions"><button id="stock-cancel" type="button" class="button button-outline">Cancelar</button><button id="stock-submit" type="submit" class="button button-primary">Guardar</button></div>
       </form>

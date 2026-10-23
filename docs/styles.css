@@ -166,6 +166,10 @@ h1, h2, h3 { letter-spacing: -.04em; }
 .suggestion-item:last-child { border-bottom: 0; }
 .new-product-hint { margin: 0 0 12px; color: #63806b; font-size: 12px; }
 .stock-help { margin: -4px 0 17px; color: #63806b; font-size: 13px; line-height: 1.5; }
+.restock-field { margin: 0 0 16px; padding: 13px; border: 1px solid #dce9dc; border-radius: 10px; background: #f6faf4; }
+.restock-choice { display: flex; align-items: flex-start; gap: 10px; color: #315443; font-size: 13px; line-height: 1.4; cursor: pointer; }
+.restock-choice input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: #2f7049; }
+.restock-field .field { margin: 12px 0 0; }
 .shopping-list .empty-state { padding: 26px 10px; }
 
 .placeholder-view { min-height: 550px; display: grid; place-items: center; }

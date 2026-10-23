@@ -233,6 +233,15 @@ export function removeStock(state, { productoId, contenedorId, cantidad }) {
   return { ...state, existencias: state.existencias.flatMap((entry) => entry.id !== existing.id ? [entry] : entry.cantidad === cantidad ? [] : [{ ...entry, cantidad: entry.cantidad - cantidad }]) };
 }
 
+export function consumeStock(state, { productoId, contenedorId, cantidad, shoppingId, shoppingQuantity = null }) {
+  const remaining = removeStock(state, { productoId, contenedorId, cantidad });
+  if (shoppingQuantity === null) return remaining;
+  if (remaining.existencias.some((entry) => entry.productoId === productoId)) {
+    throw new DomainError("Todavía quedan unidades de este producto en el inventario.");
+  }
+  return addShoppingItem(remaining, { id: shoppingId, productoId, cantidad: shoppingQuantity });
+}
+
 export function moveStock(state, { productoId, fromContainerId, toContainerId, cantidad, id }) {
   if (fromContainerId === toContainerId) throw new DomainError("Elige otro contenedor de destino.");
   const removed = removeStock(state, { productoId, contenedorId: fromContainerId, cantidad });
