@@ -91,10 +91,9 @@ const ui = {
   stockDialog: $("stock-dialog"),
   stockForm: $("stock-form"),
   stockDialogTitle: $("stock-dialog-title"),
+  stockHelp: $("stock-help"),
   stockProductField: $("stock-product-field"),
   stockProduct: $("stock-product"),
-  stockSourceField: $("stock-source-field"),
-  stockSource: $("stock-source"),
   stockTargetField: $("stock-target-field"),
   stockTargetLabel: $("stock-target-label"),
   stockTarget: $("stock-target"),
@@ -320,6 +319,7 @@ function productName(id) {
 }
 
 function containerLabel(id) {
+  if (id === null) return "Sin asignar";
   const container = state.contenedores.find((entry) => entry.id === id);
   const room = state.estancias.find((entry) => entry.id === container?.estanciaId);
   return `${room?.nombre ?? "Estancia"} · ${container?.nombre ?? "Contenedor"}`;
@@ -368,23 +368,22 @@ function renderInventory() {
   ui.stockTotal.textContent = String(state.existencias.reduce((total, entry) => total + entry.cantidad, 0));
   ui.stockProducts.textContent = String(new Set(state.existencias.map((entry) => entry.productoId)).size);
   ui.shoppingTotal.textContent = String(state.compras.reduce((total, entry) => total + entry.cantidad, 0));
-  ui.addStock.disabled = !connected || !state.contenedores.length || !state.productos.length;
+  ui.addStock.disabled = !connected || !state.productos.length;
   ui.shoppingSubmit.disabled = !connected;
   populateShoppingTypes();
   updateShoppingSuggestions();
   ui.stockList.replaceChildren();
-  if (!state.contenedores.length) {
-    ui.stockList.append(makeEmptyState("▤", "Primero crea un contenedor", "Añade una estancia y un contenedor en Ubicaciones."));
-  } else if (!state.existencias.length) {
-    ui.stockList.append(makeEmptyState("▤", "Aún no hay existencias", "Añade unidades de un producto a un contenedor."));
+  if (!state.existencias.length) {
+    ui.stockList.append(makeEmptyState("▤", "Aún no hay existencias", "Añade unidades de un producto. Puedes asignarles un contenedor después."));
   } else {
-    for (const container of [...state.contenedores].sort((a, b) => containerLabel(a.id).localeCompare(containerLabel(b.id), "es"))) {
-      const stocks = state.existencias.filter((entry) => entry.contenedorId === container.id).sort((a, b) => productName(a.productoId).localeCompare(productName(b.productoId), "es"));
+    const containerIds = [null, ...[...state.contenedores].sort((a, b) => containerLabel(a.id).localeCompare(containerLabel(b.id), "es")).map((entry) => entry.id)];
+    for (const containerId of containerIds) {
+      const stocks = state.existencias.filter((entry) => entry.contenedorId === containerId).sort((a, b) => productName(a.productoId).localeCompare(productName(b.productoId), "es"));
       if (!stocks.length) continue;
       const group = document.createElement("section");
       group.className = "stock-group";
       const heading = document.createElement("h3");
-      heading.textContent = containerLabel(container.id);
+      heading.textContent = containerLabel(containerId);
       group.append(heading);
       for (const stock of stocks) {
         const row = document.createElement("div");
@@ -401,7 +400,7 @@ function renderInventory() {
         actions.append(
           makeButton("+ Entrada", "text-button", () => openStockDialog("add", stock), !connected),
           makeButton("− Salida", "text-button", () => openStockDialog("remove", stock), !connected),
-          makeButton("Mover", "text-button", () => openStockDialog("move", stock), !connected || state.contenedores.length < 2),
+          makeButton("Mover", "text-button", () => openStockDialog("move", stock), !connected || (stock.contenedorId === null ? state.contenedores.length === 0 : false)),
         );
         row.append(details, actions);
         group.append(row);
@@ -426,7 +425,7 @@ function renderInventory() {
       const actions = document.createElement("div");
       actions.className = "stock-actions";
       actions.append(
-        makeButton("Guardar compra", "text-button", () => openStockDialog("purchase", item), !connected || !state.contenedores.length),
+        makeButton("Guardar compra", "text-button", () => openStockDialog("purchase", item), !connected),
         makeButton("Quitar", "text-button text-button-danger", () => discardShoppingItem(item.id), !connected),
       );
       row.append(details, actions);
@@ -521,18 +520,17 @@ function openStockDialog(mode, item = null) {
   stockMode = { mode, item };
   ui.stockError.hidden = true;
   ui.stockProductField.hidden = mode !== "add";
-  ui.stockSourceField.hidden = mode !== "move";
-  ui.stockTargetField.hidden = mode === "remove";
-  ui.stockDialogTitle.textContent = { add: "Añadir existencias", remove: "Retirar unidades", move: "Mover unidades", purchase: "Guardar compra" }[mode];
-  ui.stockTargetLabel.textContent = mode === "move" ? "Contenedor de destino" : "Contenedor";
+  ui.stockHelp.hidden = mode !== "purchase";
+  ui.stockTargetField.hidden = mode === "remove" || mode === "purchase";
+  ui.stockDialogTitle.textContent = mode === "move" ? `Mover unidades desde ${containerLabel(item.contenedorId)}` : { add: "Añadir existencias", remove: "Retirar unidades", purchase: "Guardar compra" }[mode];
+  ui.stockTargetLabel.textContent = mode === "move" ? "Destino" : "Ubicación";
   ui.stockSubmit.textContent = mode === "remove" ? "Retirar" : mode === "move" ? "Mover" : "Guardar";
   fillSelect(ui.stockProduct, [...state.productos].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")).map((entry) => ({ id: entry.id, label: entry.nombre })), item?.productoId);
-  const containers = [...state.contenedores].sort((a, b) => containerLabel(a.id).localeCompare(containerLabel(b.id), "es")).map((entry) => ({ id: entry.id, label: containerLabel(entry.id) }));
-  fillSelect(ui.stockSource, containers, item?.contenedorId);
-  fillSelect(ui.stockTarget, containers, mode === "add" ? item?.contenedorId : null);
-  if (mode === "move" && ui.stockTarget.value === item.contenedorId) {
-    ui.stockTarget.value = containers.find((entry) => entry.id !== item.contenedorId)?.id ?? "";
-  }
+  const destinations = [
+    { id: "", label: "Sin asignar (organizar después)" },
+    ...[...state.contenedores].sort((a, b) => containerLabel(a.id).localeCompare(containerLabel(b.id), "es")).map((entry) => ({ id: entry.id, label: containerLabel(entry.id) })),
+  ];
+  fillSelect(ui.stockTarget, mode === "move" ? destinations.filter((entry) => (entry.id || null) !== item.contenedorId) : destinations, mode === "add" ? item?.contenedorId : null);
   ui.stockQuantity.value = String(mode === "purchase" ? item.cantidad : 1);
   ui.stockDialog.showModal();
   (mode === "add" ? ui.stockProduct : ui.stockQuantity).focus();
@@ -546,8 +544,8 @@ async function submitStock(event) {
   const { mode, item } = stockMode;
   const cantidad = Number(ui.stockQuantity.value);
   const productoId = mode === "add" ? ui.stockProduct.value : item.productoId;
-  const contenedorId = mode === "add" ? ui.stockTarget.value : item.contenedorId;
-  const targetId = ui.stockTarget.value;
+  const contenedorId = mode === "add" ? ui.stockTarget.value || null : item.contenedorId;
+  const targetId = ui.stockTarget.value || null;
   const newId = crypto.randomUUID();
   try {
     if (mode === "add") {
@@ -557,7 +555,7 @@ async function submitStock(event) {
     } else if (mode === "move") {
       await saveChange((current) => moveStock(current, { id: newId, productoId, fromContainerId: contenedorId, toContainerId: targetId, cantidad }), "Unidades trasladadas.");
     } else if (mode === "purchase") {
-      await saveChange((current) => completeShoppingItem(current, { itemId: item.id, contenedorId: targetId, cantidad, stockId: newId }), "Compra guardada en el inventario.");
+      await saveChange((current) => completeShoppingItem(current, { itemId: item.id, cantidad, stockId: newId }), "Compra guardada sin asignar en el inventario.");
     }
     ui.stockDialog.close();
     stockMode = null;
@@ -856,7 +854,7 @@ function exportCsv() {
     const container = state.contenedores.find((entry) => entry.id === stock.contenedorId);
     const room = state.estancias.find((entry) => entry.id === container?.estanciaId);
     const product = state.productos.find((entry) => entry.id === stock.productoId);
-    rows.push(["Inventario", room?.nombre ?? "", container?.nombre ?? "", state.tipos.find((entry) => entry.id === product?.tipoId)?.nombre ?? "", product?.nombre ?? "", stock.cantidad]);
+    rows.push(["Inventario", room?.nombre ?? "", stock.contenedorId === null ? "Sin asignar" : container?.nombre ?? "", state.tipos.find((entry) => entry.id === product?.tipoId)?.nombre ?? "", product?.nombre ?? "", stock.cantidad]);
   }
   for (const item of state.compras) {
     const product = state.productos.find((entry) => entry.id === item.productoId);

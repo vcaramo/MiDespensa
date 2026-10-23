@@ -214,7 +214,7 @@ function requireQuantity(cantidad) {
 export function addStock(state, { id, productoId, contenedorId, cantidad }) {
   requireQuantity(cantidad);
   findById(state.productos, productoId, "El producto");
-  findById(state.contenedores, contenedorId, "El contenedor");
+  if (contenedorId !== null) findById(state.contenedores, contenedorId, "El contenedor");
   const existing = state.existencias.find((entry) => entry.productoId === productoId && entry.contenedorId === contenedorId);
   if (existing) {
     const total = existing.cantidad + cantidad;
@@ -258,7 +258,7 @@ export function removeShoppingItem(state, id) {
   return { ...state, compras: state.compras.filter((entry) => entry.id !== id) };
 }
 
-export function completeShoppingItem(state, { itemId, contenedorId, cantidad, stockId }) {
+export function completeShoppingItem(state, { itemId, contenedorId = null, cantidad, stockId }) {
   const item = findById(state.compras, itemId, "El producto de la lista");
   requireQuantity(cantidad);
   if (cantidad > item.cantidad) throw new DomainError("La cantidad supera las unidades pendientes de compra.");
@@ -330,7 +330,7 @@ export function validateState(input) {
     })),
     existencias: readCollection(input, "existencias", (entry) => ({
       id: requireId(entry.id),
-      contenedorId: requireId(entry.contenedorId),
+      contenedorId: entry.contenedorId === null ? null : requireId(entry.contenedorId),
       productoId: requireId(entry.productoId),
       cantidad: entry.cantidad,
     })),
@@ -362,13 +362,13 @@ export function validateState(input) {
   }
   const pairs = new Set();
   for (const entry of state.existencias) {
-    if (!containerIds.has(entry.contenedorId) || !productIds.has(entry.productoId)) {
+    if ((entry.contenedorId !== null && !containerIds.has(entry.contenedorId)) || !productIds.has(entry.productoId)) {
       throw new DomainError("Una existencia tiene una referencia inexistente.");
     }
     if (!Number.isSafeInteger(entry.cantidad) || entry.cantidad <= 0) {
       throw new DomainError("Una existencia tiene una cantidad inválida.");
     }
-    const pair = `${entry.contenedorId}\u0000${entry.productoId}`;
+    const pair = JSON.stringify([entry.contenedorId, entry.productoId]);
     if (pairs.has(pair)) throw new DomainError("Hay existencias duplicadas para un mismo producto y contenedor.");
     pairs.add(pair);
   }

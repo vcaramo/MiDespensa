@@ -84,6 +84,23 @@ test("la compra agrega cantidades, permite recepción parcial y protege el produ
   assert.deepEqual(parseImportJson(JSON.stringify(state)), state);
 });
 
+test("una compra entra sin contenedor y se puede asignar más tarde", () => {
+  let state = createProducto(createTipo(emptyState(), { id: "tipo", nombre: "Lácteos" }), { id: "leche", tipoId: "tipo", nombre: "Leche" });
+  state = addShoppingItem(state, { id: "compra", productoId: "leche", cantidad: 4 });
+  state = completeShoppingItem(state, { itemId: "compra", cantidad: 4, stockId: "pendiente" });
+  assert.deepEqual(state.existencias, [{ id: "pendiente", productoId: "leche", contenedorId: null, cantidad: 4 }]);
+  assert.equal(state.compras.length, 0);
+  assert.deepEqual(parseImportJson(JSON.stringify(state)), state);
+
+  state = createEstancia(state, { id: "cocina", nombre: "Cocina" });
+  state = createContenedor(state, { id: "nevera", estanciaId: "cocina", nombre: "Nevera" });
+  state = moveStock(state, { id: "asignada", productoId: "leche", fromContainerId: null, toContainerId: "nevera", cantidad: 3 });
+  assert.deepEqual(state.existencias.map((entry) => [entry.contenedorId, entry.cantidad]), [[null, 1], ["nevera", 3]]);
+  state = moveStock(state, { id: "sin-uso", productoId: "leche", fromContainerId: null, toContainerId: "nevera", cantidad: 1 });
+  assert.deepEqual(state.existencias, [{ id: "asignada", productoId: "leche", contenedorId: "nevera", cantidad: 4 }]);
+  assert.equal(validateState(state).existencias.length, 1);
+});
+
 test("las copias anteriores se importan con lista vacía y los datos nuevos se validan", () => {
   const oldCopy = exampleState();
   delete oldCopy.compras;

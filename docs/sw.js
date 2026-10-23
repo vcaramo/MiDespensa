@@ -1,4 +1,4 @@
-const CACHE_NAME = "despensa-v7";
+const CACHE_NAME = "despensa-v8";
 const APP_FILES = [
   "./",
   "./index.html",

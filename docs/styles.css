@@ -165,6 +165,7 @@ h1, h2, h3 { letter-spacing: -.04em; }
 .suggestion-item:hover, .suggestion-item:focus-visible { background: #ecf4e9; }
 .suggestion-item:last-child { border-bottom: 0; }
 .new-product-hint { margin: 0 0 12px; color: #63806b; font-size: 12px; }
+.stock-help { margin: -4px 0 17px; color: #63806b; font-size: 13px; line-height: 1.5; }
 .shopping-list .empty-state { padding: 26px 10px; }
 
 .placeholder-view { min-height: 550px; display: grid; place-items: center; }

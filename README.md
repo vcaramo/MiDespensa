@@ -1,6 +1,6 @@
 # Despensa
 
-Aplicación personal de despensa para una vivienda. Incluye **ubicaciones, catálogo, inventario y lista de la compra**. Puedes registrar unidades enteras por contenedor, retirarlas sin superar el saldo y trasladarlas entre contenedores. La lista sugiere productos del catálogo mientras escribes; si no existe uno, puedes crearlo desde allí con una categoría existente o nueva. Al guardar una compra, eliges el contenedor y puedes registrar solo parte de las unidades pendientes. El borrado de ubicaciones o productos se bloquea cuando tienen existencias o compras asociadas. La interfaz se adapta a móvil, tableta y ordenador.
+Aplicación personal de despensa para una vivienda. Incluye **ubicaciones, catálogo, inventario y lista de la compra**. Puedes registrar unidades enteras, retirarlas sin superar el saldo y trasladarlas entre contenedores. La lista sugiere productos del catálogo mientras escribes; si no existe uno, puedes crearlo desde allí con una categoría existente o nueva. Al guardar una compra, sus unidades pasan a **Sin asignar**; después puedes moverlas a un contenedor. También puedes registrar solo parte de las unidades pendientes. El borrado de ubicaciones o productos se bloquea cuando tienen existencias o compras asociadas. La interfaz se adapta a móvil, tableta y ordenador.
 
 ## Abrirla en local
 

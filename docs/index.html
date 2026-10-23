@@ -132,7 +132,7 @@
           <div class="catalog-intro">
             <p class="eyebrow">EXISTENCIAS Y COMPRAS</p>
             <h1 id="inventory-title">Controla lo que tienes.</h1>
-            <p>Registra unidades por contenedor y prepara lo que necesitas comprar.</p>
+            <p>Registra lo que tienes y asígnale un contenedor cuando quieras.</p>
             <div class="catalog-toolbar">
               <button id="add-stock" class="button button-primary" type="button">+ Añadir existencias</button>
               <span id="inventory-offline-hint" class="offline-hint" hidden>Sin conexión: puedes consultar, pero los cambios están pausados.</span>
@@ -145,7 +145,7 @@
           </div>
           <div class="inventory-layout">
             <section class="panel" aria-labelledby="stock-heading">
-              <div class="panel-heading"><h2 id="stock-heading">Existencias por contenedor</h2></div>
+              <div class="panel-heading"><h2 id="stock-heading">Existencias</h2></div>
               <div id="stock-list" class="stock-list"></div>
             </section>
             <section class="panel" aria-labelledby="shopping-heading">
@@ -219,8 +219,8 @@
     <dialog id="stock-dialog" class="modal">
       <form id="stock-form" method="dialog" novalidate>
         <div class="modal-head"><div><p class="eyebrow">INVENTARIO</p><h2 id="stock-dialog-title">Añadir existencias</h2></div><button id="stock-close" type="button" class="close-button" aria-label="Cerrar">×</button></div>
+        <p id="stock-help" class="stock-help" hidden>La compra quedará en «Sin asignar». Podrás moverla a un contenedor más adelante.</p>
         <label id="stock-product-field" class="field"><span>Producto</span><select id="stock-product"></select></label>
-        <label id="stock-source-field" class="field" hidden><span>Contenedor de origen</span><select id="stock-source"></select></label>
         <label id="stock-target-field" class="field"><span id="stock-target-label">Contenedor</span><select id="stock-target"></select></label>
         <label class="field"><span>Unidades</span><input id="stock-quantity" type="number" min="1" step="1" value="1" required /></label>
         <p id="stock-error" class="form-error" role="alert" hidden></p>
