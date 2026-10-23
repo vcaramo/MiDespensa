@@ -74,13 +74,21 @@ test("la compra agrega cantidades, permite recepción parcial y protege el produ
   state = addShoppingItem(state, { id: "sin-uso", productoId: "leche", cantidad: 2 });
   assert.deepEqual(state.compras, [{ id: "compra", productoId: "leche", cantidad: 5 }]);
   assert.throws(() => deleteProducto(state, "leche"), /lista de la compra/);
-  assert.throws(() => completeShoppingItem(state, { itemId: "compra", contenedorId: "nevera", cantidad: 6, stockId: "stock" }), /supera/);
   state = completeShoppingItem(state, { itemId: "compra", contenedorId: "nevera", cantidad: 2, stockId: "stock" });
   assert.equal(state.compras[0].cantidad, 3);
   assert.equal(state.existencias[0].cantidad, 2);
   state = completeShoppingItem(state, { itemId: "compra", contenedorId: "nevera", cantidad: 3, stockId: "sin-uso" });
   assert.equal(state.compras.length, 0);
   assert.equal(state.existencias[0].cantidad, 5);
+  assert.deepEqual(parseImportJson(JSON.stringify(state)), state);
+});
+
+test("permite comprar más unidades que las apuntadas y registra la cantidad real", () => {
+  let state = createProducto(createTipo(emptyState(), { id: "tipo", nombre: "Lácteos" }), { id: "leche", tipoId: "tipo", nombre: "Leche" });
+  state = addShoppingItem(state, { id: "compra", productoId: "leche", cantidad: 2 });
+  state = completeShoppingItem(state, { itemId: "compra", cantidad: 5, stockId: "stock" });
+  assert.deepEqual(state.compras, []);
+  assert.deepEqual(state.existencias, [{ id: "stock", productoId: "leche", contenedorId: null, cantidad: 5 }]);
   assert.deepEqual(parseImportJson(JSON.stringify(state)), state);
 });
 

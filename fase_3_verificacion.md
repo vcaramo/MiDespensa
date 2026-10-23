@@ -7,6 +7,7 @@
 - Lista de la compra con sugerencias del catálogo al escribir. Si el producto no existe, se crea en una categoría existente o en una nueva.
 - Los productos añadidos de nuevo a la lista acumulan sus unidades pendientes.
 - Al guardar una compra, entra en el inventario sin contenedor. Se permite registrar una parte y mantener el resto pendiente. Las unidades sin asignar se pueden mover después a un contenedor.
+- Si se compran más unidades que las previstas, entra la cantidad real y el producto deja de figurar como pendiente.
 - El JSON local y las copias exportadas incluyen la lista de la compra. Los JSON anteriores, sin ese campo, siguen siendo importables.
 - CSV legible con ubicaciones, catálogo, existencias y compras pendientes.
 
@@ -17,6 +18,7 @@
 - Vista móvil a 320 px: sin desbordamiento horizontal; resumen y paneles en una columna legible.
 - Recarga del navegador: los datos de prueba permanecieron en el almacenamiento local.
 - En el navegador local: una compra se guardó en «Sin asignar» y después se movió al contenedor «Cocina · Nevera».
+- En el navegador local: con 1 unidad pendiente de leche se registraron 4 compradas; el inventario mostró 4 unidades nuevas sin asignar y 0 pendientes.
 
 ## Alcance de esta versión
 

@@ -261,11 +261,10 @@ export function removeShoppingItem(state, id) {
 export function completeShoppingItem(state, { itemId, contenedorId = null, cantidad, stockId }) {
   const item = findById(state.compras, itemId, "El producto de la lista");
   requireQuantity(cantidad);
-  if (cantidad > item.cantidad) throw new DomainError("La cantidad supera las unidades pendientes de compra.");
   const stocked = addStock(state, { id: stockId, productoId: item.productoId, contenedorId, cantidad });
   return {
     ...stocked,
-    compras: stocked.compras.flatMap((entry) => entry.id !== itemId ? [entry] : entry.cantidad === cantidad ? [] : [{ ...entry, cantidad: entry.cantidad - cantidad }]),
+    compras: stocked.compras.flatMap((entry) => entry.id !== itemId ? [entry] : entry.cantidad <= cantidad ? [] : [{ ...entry, cantidad: entry.cantidad - cantidad }]),
   };
 }
 

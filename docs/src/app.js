@@ -98,6 +98,7 @@ const ui = {
   stockTargetLabel: $("stock-target-label"),
   stockTarget: $("stock-target"),
   stockQuantity: $("stock-quantity"),
+  stockQuantityLabel: $("stock-quantity-label"),
   stockError: $("stock-error"),
   stockSubmit: $("stock-submit"),
 };
@@ -524,6 +525,7 @@ function openStockDialog(mode, item = null) {
   ui.stockTargetField.hidden = mode === "remove" || mode === "purchase";
   ui.stockDialogTitle.textContent = mode === "move" ? `Mover unidades desde ${containerLabel(item.contenedorId)}` : { add: "Añadir existencias", remove: "Retirar unidades", purchase: "Guardar compra" }[mode];
   ui.stockTargetLabel.textContent = mode === "move" ? "Destino" : "Ubicación";
+  ui.stockQuantityLabel.textContent = mode === "purchase" ? "Unidades compradas" : "Unidades";
   ui.stockSubmit.textContent = mode === "remove" ? "Retirar" : mode === "move" ? "Mover" : "Guardar";
   fillSelect(ui.stockProduct, [...state.productos].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")).map((entry) => ({ id: entry.id, label: entry.nombre })), item?.productoId);
   const destinations = [
