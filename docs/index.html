@@ -94,7 +94,7 @@
           <div class="catalog-intro">
             <p class="eyebrow">TUS PRODUCTOS, BIEN ORGANIZADOS</p>
             <h1 id="catalog-title">Tu catálogo de productos.</h1>
-            <p>Define los productos una sola vez. Más adelante podrás colocarlos en cualquier contenedor.</p>
+            <p>Define los productos una sola vez y úsalos en el inventario y la lista de la compra.</p>
             <div class="catalog-toolbar">
               <button id="add-type" class="button button-secondary" type="button">+ Nuevo tipo</button>
               <button id="add-product" class="button button-primary" type="button" disabled>+ Nuevo producto</button>
@@ -128,13 +128,42 @@
           </div>
         </section>
 
-        <section id="view-inventario" class="view placeholder-view" aria-labelledby="inventory-title" hidden>
-          <div class="placeholder-card">
-            <span class="placeholder-icon" aria-hidden="true">▤</span>
-            <p class="eyebrow">INVENTARIO</p>
+        <section id="view-inventario" class="view" aria-labelledby="inventory-title" hidden>
+          <div class="catalog-intro">
+            <p class="eyebrow">EXISTENCIAS Y COMPRAS</p>
             <h1 id="inventory-title">Controla lo que tienes.</h1>
-            <p>Consulta cantidades, registra entradas y salidas y traslada productos entre espacios.</p>
-            <span class="soon-label">Disponible próximamente</span>
+            <p>Registra unidades por contenedor y prepara lo que necesitas comprar.</p>
+            <div class="catalog-toolbar">
+              <button id="add-stock" class="button button-primary" type="button">+ Añadir existencias</button>
+              <span id="inventory-offline-hint" class="offline-hint" hidden>Sin conexión: puedes consultar, pero los cambios están pausados.</span>
+            </div>
+          </div>
+          <div class="catalog-summary" aria-label="Resumen de inventario">
+            <span><strong id="stock-total">0</strong> unidades</span>
+            <span><strong id="stock-products">0</strong> productos con existencias</span>
+            <span><strong id="shopping-total">0</strong> pendientes de compra</span>
+          </div>
+          <div class="inventory-layout">
+            <section class="panel" aria-labelledby="stock-heading">
+              <div class="panel-heading"><h2 id="stock-heading">Existencias por contenedor</h2></div>
+              <div id="stock-list" class="stock-list"></div>
+            </section>
+            <section class="panel" aria-labelledby="shopping-heading">
+              <div class="panel-heading"><h2 id="shopping-heading">Lista de la compra</h2></div>
+              <form id="shopping-form" class="shopping-form" novalidate>
+                <label class="field"><span>Producto</span><input id="shopping-name" type="text" maxlength="80" autocomplete="off" placeholder="Escribe para buscar…" required aria-controls="shopping-suggestions" /></label>
+                <div id="shopping-suggestions" class="suggestions" role="listbox" hidden></div>
+                <div id="shopping-new-fields" hidden>
+                  <p class="new-product-hint">Se creará un producto nuevo en el catálogo.</p>
+                  <label class="field"><span>Categoría</span><select id="shopping-type"></select></label>
+                  <label id="shopping-new-type-field" class="field" hidden><span>Nueva categoría</span><input id="shopping-new-type" type="text" maxlength="80" autocomplete="off" /></label>
+                </div>
+                <label class="field"><span>Unidades a comprar</span><input id="shopping-quantity" type="number" min="1" step="1" value="1" required /></label>
+                <p id="shopping-error" class="form-error" role="alert" hidden></p>
+                <button id="shopping-submit" class="button button-primary" type="submit">Añadir a la lista</button>
+              </form>
+              <div id="shopping-list" class="shopping-list"></div>
+            </section>
           </div>
         </section>
 
@@ -184,6 +213,18 @@
           <button id="edit-cancel" type="button" class="button button-outline">Cancelar</button>
           <button id="edit-submit" type="submit" class="button button-primary">Guardar</button>
         </div>
+      </form>
+    </dialog>
+
+    <dialog id="stock-dialog" class="modal">
+      <form id="stock-form" method="dialog" novalidate>
+        <div class="modal-head"><div><p class="eyebrow">INVENTARIO</p><h2 id="stock-dialog-title">Añadir existencias</h2></div><button id="stock-close" type="button" class="close-button" aria-label="Cerrar">×</button></div>
+        <label id="stock-product-field" class="field"><span>Producto</span><select id="stock-product"></select></label>
+        <label id="stock-source-field" class="field" hidden><span>Contenedor de origen</span><select id="stock-source"></select></label>
+        <label id="stock-target-field" class="field"><span id="stock-target-label">Contenedor</span><select id="stock-target"></select></label>
+        <label class="field"><span>Unidades</span><input id="stock-quantity" type="number" min="1" step="1" value="1" required /></label>
+        <p id="stock-error" class="form-error" role="alert" hidden></p>
+        <div class="modal-actions"><button id="stock-cancel" type="button" class="button button-outline">Cancelar</button><button id="stock-submit" type="submit" class="button button-primary">Guardar</button></div>
       </form>
     </dialog>
 

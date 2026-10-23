@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  addShoppingItem,
+  addStock,
+  completeShoppingItem,
   createContenedor,
   createEstancia,
   createProducto,
@@ -11,10 +14,13 @@ import {
   deleteTipo,
   emptyState,
   moveContenedor,
+  moveStock,
   parseImportJson,
   renameContenedor,
   renameEstancia,
   renameTipo,
+  removeShoppingItem,
+  removeStock,
   updateProducto,
   withInitialCatalog,
   validateState,
@@ -45,6 +51,47 @@ test("organiza estancias y contenedores y conserva sus ID al renombrar y mover",
     id: "armario", estanciaId: "despensa", nombre: "Armario",
   });
   assert.equal(validateState(state).contenedores.length, 3);
+});
+
+test("entradas, salidas y traslados mantienen una sola existencia por producto y contenedor", () => {
+  let state = createProducto(createTipo(exampleState(), { id: "tipo", nombre: "Lácteos" }), { id: "leche", tipoId: "tipo", nombre: "Leche" });
+  state = addStock(state, { id: "stock1", productoId: "leche", contenedorId: "nevera", cantidad: 4 });
+  state = addStock(state, { id: "sin-uso", productoId: "leche", contenedorId: "nevera", cantidad: 3 });
+  assert.equal(state.existencias.length, 1);
+  assert.equal(state.existencias[0].cantidad, 7);
+  assert.throws(() => removeStock(state, { productoId: "leche", contenedorId: "nevera", cantidad: 8 }), /suficientes/);
+  state = moveStock(state, { id: "stock2", productoId: "leche", fromContainerId: "nevera", toContainerId: "armario", cantidad: 2 });
+  assert.deepEqual(state.existencias.map((entry) => entry.cantidad), [5, 2]);
+  state = removeStock(state, { productoId: "leche", contenedorId: "armario", cantidad: 2 });
+  assert.equal(state.existencias.length, 1);
+  assert.throws(() => moveStock(state, { id: "stock3", productoId: "leche", fromContainerId: "nevera", toContainerId: "nevera", cantidad: 1 }), /otro contenedor/);
+  assert.equal(validateState(state).existencias[0].cantidad, 5);
+});
+
+test("la compra agrega cantidades, permite recepción parcial y protege el producto", () => {
+  let state = createProducto(createTipo(exampleState(), { id: "tipo", nombre: "Lácteos" }), { id: "leche", tipoId: "tipo", nombre: "Leche" });
+  state = addShoppingItem(state, { id: "compra", productoId: "leche", cantidad: 3 });
+  state = addShoppingItem(state, { id: "sin-uso", productoId: "leche", cantidad: 2 });
+  assert.deepEqual(state.compras, [{ id: "compra", productoId: "leche", cantidad: 5 }]);
+  assert.throws(() => deleteProducto(state, "leche"), /lista de la compra/);
+  assert.throws(() => completeShoppingItem(state, { itemId: "compra", contenedorId: "nevera", cantidad: 6, stockId: "stock" }), /supera/);
+  state = completeShoppingItem(state, { itemId: "compra", contenedorId: "nevera", cantidad: 2, stockId: "stock" });
+  assert.equal(state.compras[0].cantidad, 3);
+  assert.equal(state.existencias[0].cantidad, 2);
+  state = completeShoppingItem(state, { itemId: "compra", contenedorId: "nevera", cantidad: 3, stockId: "sin-uso" });
+  assert.equal(state.compras.length, 0);
+  assert.equal(state.existencias[0].cantidad, 5);
+  assert.deepEqual(parseImportJson(JSON.stringify(state)), state);
+});
+
+test("las copias anteriores se importan con lista vacía y los datos nuevos se validan", () => {
+  const oldCopy = exampleState();
+  delete oldCopy.compras;
+  assert.deepEqual(parseImportJson(JSON.stringify(oldCopy)).compras, []);
+  const state = createProducto(createTipo(exampleState(), { id: "tipo", nombre: "Lácteos" }), { id: "leche", tipoId: "tipo", nombre: "Leche" });
+  assert.throws(() => validateState({ ...state, compras: [{ id: "compra", productoId: "otro", cantidad: 1 }] }), /no existe/);
+  assert.throws(() => validateState({ ...state, compras: [{ id: "compra", productoId: "leche", cantidad: -1 }] }), /cantidad/);
+  assert.deepEqual(removeShoppingItem(addShoppingItem(state, { id: "compra", productoId: "leche", cantidad: 1 }), "compra").compras, []);
 });
 
 test("impide nombres duplicados en una estancia y en su destino", () => {

@@ -1,6 +1,6 @@
 # Despensa
 
-Aplicación personal de despensa para una vivienda. Están implementadas las **ubicaciones y el catálogo**. Puedes crear, renombrar y mover contenedores; crear tipos y productos; cambiar el tipo de un producto y consultar productos por tipo. Un producto puede existir sin unidades almacenadas. Se bloquea el borrado de tipos con productos y de productos con existencias. Al eliminar una estancia, una confirmación indica cuántos contenedores vacíos se borrarán con ella; si contienen existencias, el borrado se bloquea. La interfaz se adapta a móvil, tableta y ordenador. El inventario de cantidades es la siguiente fase.
+Aplicación personal de despensa para una vivienda. Incluye **ubicaciones, catálogo, inventario y lista de la compra**. Puedes registrar unidades enteras por contenedor, retirarlas sin superar el saldo y trasladarlas entre contenedores. La lista sugiere productos del catálogo mientras escribes; si no existe uno, puedes crearlo desde allí con una categoría existente o nueva. Al guardar una compra, eliges el contenedor y puedes registrar solo parte de las unidades pendientes. El borrado de ubicaciones o productos se bloquea cuando tienen existencias o compras asociadas. La interfaz se adapta a móvil, tableta y ordenador.
 
 ## Abrirla en local
 
@@ -20,7 +20,7 @@ node --test
 
 ## Datos y copias
 
-Los cambios se guardan automáticamente en IndexedDB de **cada navegador y dispositivo**. La web no tiene servidor de datos ni sincronización. Usa **Exportar JSON** para descargar una copia restaurable y **Importar JSON** para transferirla a otro dispositivo. La importación valida el archivo y muestra una vista previa antes de reemplazar todos los datos locales. **Descargar CSV** genera una tabla legible de ubicaciones.
+Los cambios se guardan automáticamente en IndexedDB de **cada navegador y dispositivo**. La web no tiene servidor de datos ni sincronización. Usa **Exportar JSON** para descargar una copia restaurable y **Importar JSON** para transferirla a otro dispositivo. La importación valida el archivo y muestra una vista previa antes de reemplazar todos los datos locales. Las copias anteriores siguen siendo compatibles; se importan con la lista de la compra vacía. **Descargar CSV** genera una tabla legible de ubicaciones, catálogo, existencias y compras pendientes.
 
 La consulta de datos guardados funciona sin conexión después de cargar la aplicación al menos una vez; las modificaciones y la importación requieren conexión con el sitio. El navegador puede borrar su almacenamiento local, así que conserva los JSON fuera de él. No subas tus exportaciones reales al repositorio público.
 
@@ -34,4 +34,4 @@ El archivo [catalogo-inicial.json](docs/catalogo-inicial.json) forma parte de la
 
 Los archivos publicables están en `docs/`. En la configuración del repositorio, elige **Deploy from a branch**, la rama que uses y la carpeta **`/docs`**. El repositorio de GitHub Pages personal gratuito puede ser público: confirma que solo subes código y datos ficticios. La publicación aún no se ha realizado.
 
-La definición, decisiones y fases están en [fase_0_analisis.md](fase_0_analisis.md). Las comprobaciones están en [fase_1_verificacion.md](fase_1_verificacion.md) y [fase_2_verificacion.md](fase_2_verificacion.md).
+La definición y decisiones están en [fase_0_analisis.md](fase_0_analisis.md). Las comprobaciones están en [fase_1_verificacion.md](fase_1_verificacion.md), [fase_2_verificacion.md](fase_2_verificacion.md) y [fase_3_verificacion.md](fase_3_verificacion.md).

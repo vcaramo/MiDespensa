@@ -17,6 +17,7 @@ export function emptyState() {
     tipos: [],
     productos: [],
     existencias: [],
+    compras: [],
   };
 }
 
@@ -197,7 +198,75 @@ export function deleteProducto(state, id) {
   if (state.existencias.some((entry) => entry.productoId === id)) {
     throw new DomainError("Retira las existencias de este producto antes de borrarlo.");
   }
+  if (state.compras?.some((entry) => entry.productoId === id)) {
+    throw new DomainError("Retira el producto de la lista de la compra antes de borrarlo.");
+  }
   return { ...state, productos: state.productos.filter((entry) => entry.id !== id) };
+}
+
+function requireQuantity(cantidad) {
+  if (!Number.isSafeInteger(cantidad) || cantidad <= 0) {
+    throw new DomainError("La cantidad debe ser un número entero mayor que cero.");
+  }
+  return cantidad;
+}
+
+export function addStock(state, { id, productoId, contenedorId, cantidad }) {
+  requireQuantity(cantidad);
+  findById(state.productos, productoId, "El producto");
+  findById(state.contenedores, contenedorId, "El contenedor");
+  const existing = state.existencias.find((entry) => entry.productoId === productoId && entry.contenedorId === contenedorId);
+  if (existing) {
+    const total = existing.cantidad + cantidad;
+    if (!Number.isSafeInteger(total)) throw new DomainError("La cantidad total es demasiado grande.");
+    return { ...state, existencias: state.existencias.map((entry) => entry.id === existing.id ? { ...entry, cantidad: total } : entry) };
+  }
+  requireId(id);
+  if (state.existencias.some((entry) => entry.id === id)) throw new DomainError("El identificador ya existe.");
+  return { ...state, existencias: [...state.existencias, { id, productoId, contenedorId, cantidad }] };
+}
+
+export function removeStock(state, { productoId, contenedorId, cantidad }) {
+  requireQuantity(cantidad);
+  const existing = state.existencias.find((entry) => entry.productoId === productoId && entry.contenedorId === contenedorId);
+  if (!existing || existing.cantidad < cantidad) throw new DomainError("No hay suficientes unidades en este contenedor.");
+  return { ...state, existencias: state.existencias.flatMap((entry) => entry.id !== existing.id ? [entry] : entry.cantidad === cantidad ? [] : [{ ...entry, cantidad: entry.cantidad - cantidad }]) };
+}
+
+export function moveStock(state, { productoId, fromContainerId, toContainerId, cantidad, id }) {
+  if (fromContainerId === toContainerId) throw new DomainError("Elige otro contenedor de destino.");
+  const removed = removeStock(state, { productoId, contenedorId: fromContainerId, cantidad });
+  return addStock(removed, { id, productoId, contenedorId: toContainerId, cantidad });
+}
+
+export function addShoppingItem(state, { id, productoId, cantidad }) {
+  requireQuantity(cantidad);
+  findById(state.productos, productoId, "El producto");
+  const existing = state.compras.find((entry) => entry.productoId === productoId);
+  if (existing) {
+    const total = existing.cantidad + cantidad;
+    if (!Number.isSafeInteger(total)) throw new DomainError("La cantidad total es demasiado grande.");
+    return { ...state, compras: state.compras.map((entry) => entry.id === existing.id ? { ...entry, cantidad: total } : entry) };
+  }
+  requireId(id);
+  if (state.compras.some((entry) => entry.id === id)) throw new DomainError("El identificador ya existe.");
+  return { ...state, compras: [...state.compras, { id, productoId, cantidad }] };
+}
+
+export function removeShoppingItem(state, id) {
+  findById(state.compras, id, "El producto de la lista");
+  return { ...state, compras: state.compras.filter((entry) => entry.id !== id) };
+}
+
+export function completeShoppingItem(state, { itemId, contenedorId, cantidad, stockId }) {
+  const item = findById(state.compras, itemId, "El producto de la lista");
+  requireQuantity(cantidad);
+  if (cantidad > item.cantidad) throw new DomainError("La cantidad supera las unidades pendientes de compra.");
+  const stocked = addStock(state, { id: stockId, productoId: item.productoId, contenedorId, cantidad });
+  return {
+    ...stocked,
+    compras: stocked.compras.flatMap((entry) => entry.id !== itemId ? [entry] : entry.cantidad === cantidad ? [] : [{ ...entry, cantidad: entry.cantidad - cantidad }]),
+  };
 }
 
 function readCollection(input, key, mapEntry) {
@@ -265,10 +334,15 @@ export function validateState(input) {
       productoId: requireId(entry.productoId),
       cantidad: entry.cantidad,
     })),
+    compras: readCollection({ compras: input.compras === undefined ? [] : input.compras }, "compras", (entry) => ({
+      id: requireId(entry.id),
+      productoId: requireId(entry.productoId),
+      cantidad: entry.cantidad,
+    })),
   };
 
   const allIds = new Set();
-  for (const key of ["estancias", "contenedores", "tipos", "productos", "existencias"]) {
+  for (const key of ["estancias", "contenedores", "tipos", "productos", "existencias", "compras"]) {
     ensureUniqueIds(state[key], key, allIds);
   }
   ensureUniqueNames(state.estancias, "estancias");
@@ -297,6 +371,13 @@ export function validateState(input) {
     const pair = `${entry.contenedorId}\u0000${entry.productoId}`;
     if (pairs.has(pair)) throw new DomainError("Hay existencias duplicadas para un mismo producto y contenedor.");
     pairs.add(pair);
+  }
+  const shoppingProducts = new Set();
+  for (const entry of state.compras) {
+    if (!productIds.has(entry.productoId)) throw new DomainError("Un producto de la lista de la compra no existe en el catálogo.");
+    requireQuantity(entry.cantidad);
+    if (shoppingProducts.has(entry.productoId)) throw new DomainError("Hay productos duplicados en la lista de la compra.");
+    shoppingProducts.add(entry.productoId);
   }
   return state;
 }

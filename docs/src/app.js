@@ -1,4 +1,9 @@
 import {
+  addShoppingItem,
+  addStock,
+  canonicalName,
+  cleanName,
+  completeShoppingItem,
   createContenedor,
   createEstancia,
   createProducto,
@@ -8,10 +13,13 @@ import {
   deleteProducto,
   deleteTipo,
   moveContenedor,
+  moveStock,
   parseImportJson,
   renameContenedor,
   renameEstancia,
   renameTipo,
+  removeShoppingItem,
+  removeStock,
   updateProducto,
 } from "./domain.js";
 import { commitState, loadState, RevisionConflictError } from "./storage.js";
@@ -63,6 +71,36 @@ const ui = {
   addType: $("add-type"),
   addProduct: $("add-product"),
   catalogOfflineHint: $("catalog-offline-hint"),
+  inventoryOfflineHint: $("inventory-offline-hint"),
+  addStock: $("add-stock"),
+  stockTotal: $("stock-total"),
+  stockProducts: $("stock-products"),
+  shoppingTotal: $("shopping-total"),
+  stockList: $("stock-list"),
+  shoppingList: $("shopping-list"),
+  shoppingForm: $("shopping-form"),
+  shoppingName: $("shopping-name"),
+  shoppingSuggestions: $("shopping-suggestions"),
+  shoppingNewFields: $("shopping-new-fields"),
+  shoppingType: $("shopping-type"),
+  shoppingNewTypeField: $("shopping-new-type-field"),
+  shoppingNewType: $("shopping-new-type"),
+  shoppingQuantity: $("shopping-quantity"),
+  shoppingError: $("shopping-error"),
+  shoppingSubmit: $("shopping-submit"),
+  stockDialog: $("stock-dialog"),
+  stockForm: $("stock-form"),
+  stockDialogTitle: $("stock-dialog-title"),
+  stockProductField: $("stock-product-field"),
+  stockProduct: $("stock-product"),
+  stockSourceField: $("stock-source-field"),
+  stockSource: $("stock-source"),
+  stockTargetField: $("stock-target-field"),
+  stockTargetLabel: $("stock-target-label"),
+  stockTarget: $("stock-target"),
+  stockQuantity: $("stock-quantity"),
+  stockError: $("stock-error"),
+  stockSubmit: $("stock-submit"),
 };
 
 let state;
@@ -73,6 +111,7 @@ let editMode = null;
 let pendingImport = null;
 let importBusy = false;
 let toastTimeout;
+let stockMode = null;
 
 function showToast(message, isError = false) {
   clearTimeout(toastTimeout);
@@ -276,6 +315,126 @@ function renderCatalog() {
   renderProducts();
 }
 
+function productName(id) {
+  return state.productos.find((entry) => entry.id === id)?.nombre ?? "Producto desconocido";
+}
+
+function containerLabel(id) {
+  const container = state.contenedores.find((entry) => entry.id === id);
+  const room = state.estancias.find((entry) => entry.id === container?.estanciaId);
+  return `${room?.nombre ?? "Estancia"} · ${container?.nombre ?? "Contenedor"}`;
+}
+
+function normalizedSearch(value) {
+  return value.trim().replace(/\s+/gu, " ").normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("es");
+}
+
+function matchingProduct() {
+  const name = ui.shoppingName.value.trim();
+  if (!name) return null;
+  return state.productos.find((entry) => normalizedSearch(entry.nombre) === normalizedSearch(name)) ?? null;
+}
+
+function populateShoppingTypes() {
+  const selected = ui.shoppingType.value;
+  ui.shoppingType.replaceChildren();
+  for (const type of [...state.tipos].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))) {
+    ui.shoppingType.add(new Option(type.nombre, type.id));
+  }
+  ui.shoppingType.add(new Option("+ Crear categoría nueva", "new"));
+  ui.shoppingType.value = [...ui.shoppingType.options].some((option) => option.value === selected) ? selected : state.tipos[0]?.id ?? "new";
+  ui.shoppingNewTypeField.hidden = ui.shoppingType.value !== "new";
+}
+
+function updateShoppingSuggestions() {
+  const query = normalizedSearch(ui.shoppingName.value);
+  const matches = query ? state.productos.filter((entry) => normalizedSearch(entry.nombre).includes(query)).slice(0, 6) : [];
+  ui.shoppingSuggestions.replaceChildren();
+  for (const product of matches) {
+    const button = makeButton(product.nombre, "suggestion-item", () => {
+      ui.shoppingName.value = product.nombre;
+      updateShoppingSuggestions();
+      ui.shoppingQuantity.focus();
+    });
+    button.setAttribute("role", "option");
+    ui.shoppingSuggestions.append(button);
+  }
+  ui.shoppingSuggestions.hidden = matches.length === 0 || Boolean(matchingProduct());
+  ui.shoppingNewFields.hidden = !query || Boolean(matchingProduct());
+  ui.shoppingError.hidden = true;
+}
+
+function renderInventory() {
+  ui.stockTotal.textContent = String(state.existencias.reduce((total, entry) => total + entry.cantidad, 0));
+  ui.stockProducts.textContent = String(new Set(state.existencias.map((entry) => entry.productoId)).size);
+  ui.shoppingTotal.textContent = String(state.compras.reduce((total, entry) => total + entry.cantidad, 0));
+  ui.addStock.disabled = !connected || !state.contenedores.length || !state.productos.length;
+  ui.shoppingSubmit.disabled = !connected;
+  populateShoppingTypes();
+  updateShoppingSuggestions();
+  ui.stockList.replaceChildren();
+  if (!state.contenedores.length) {
+    ui.stockList.append(makeEmptyState("▤", "Primero crea un contenedor", "Añade una estancia y un contenedor en Ubicaciones."));
+  } else if (!state.existencias.length) {
+    ui.stockList.append(makeEmptyState("▤", "Aún no hay existencias", "Añade unidades de un producto a un contenedor."));
+  } else {
+    for (const container of [...state.contenedores].sort((a, b) => containerLabel(a.id).localeCompare(containerLabel(b.id), "es"))) {
+      const stocks = state.existencias.filter((entry) => entry.contenedorId === container.id).sort((a, b) => productName(a.productoId).localeCompare(productName(b.productoId), "es"));
+      if (!stocks.length) continue;
+      const group = document.createElement("section");
+      group.className = "stock-group";
+      const heading = document.createElement("h3");
+      heading.textContent = containerLabel(container.id);
+      group.append(heading);
+      for (const stock of stocks) {
+        const row = document.createElement("div");
+        row.className = "stock-row";
+        const details = document.createElement("div");
+        details.className = "stock-details";
+        const name = document.createElement("strong");
+        name.textContent = productName(stock.productoId);
+        const count = document.createElement("span");
+        count.textContent = `${stock.cantidad} ${stock.cantidad === 1 ? "unidad" : "unidades"}`;
+        details.append(name, count);
+        const actions = document.createElement("div");
+        actions.className = "stock-actions";
+        actions.append(
+          makeButton("+ Entrada", "text-button", () => openStockDialog("add", stock), !connected),
+          makeButton("− Salida", "text-button", () => openStockDialog("remove", stock), !connected),
+          makeButton("Mover", "text-button", () => openStockDialog("move", stock), !connected || state.contenedores.length < 2),
+        );
+        row.append(details, actions);
+        group.append(row);
+      }
+      ui.stockList.append(group);
+    }
+  }
+  ui.shoppingList.replaceChildren();
+  if (!state.compras.length) {
+    ui.shoppingList.append(makeEmptyState("☑", "Lista vacía", "Busca un producto del catálogo o crea uno nuevo aquí."));
+  } else {
+    for (const item of [...state.compras].sort((a, b) => productName(a.productoId).localeCompare(productName(b.productoId), "es"))) {
+      const row = document.createElement("div");
+      row.className = "shopping-row";
+      const details = document.createElement("div");
+      details.className = "stock-details";
+      const name = document.createElement("strong");
+      name.textContent = productName(item.productoId);
+      const count = document.createElement("span");
+      count.textContent = `${item.cantidad} ${item.cantidad === 1 ? "unidad" : "unidades"} pendiente${item.cantidad === 1 ? "" : "s"}`;
+      details.append(name, count);
+      const actions = document.createElement("div");
+      actions.className = "stock-actions";
+      actions.append(
+        makeButton("Guardar compra", "text-button", () => openStockDialog("purchase", item), !connected || !state.contenedores.length),
+        makeButton("Quitar", "text-button text-button-danger", () => discardShoppingItem(item.id), !connected),
+      );
+      row.append(details, actions);
+      ui.shoppingList.append(row);
+    }
+  }
+}
+
 function renderLastExport() {
   const value = localStorage.getItem("despensa-last-export");
   if (!value) {
@@ -302,6 +461,7 @@ function render() {
   renderRooms();
   renderContainers();
   renderCatalog();
+  renderInventory();
   renderLastExport();
 }
 
@@ -312,6 +472,7 @@ function setConnection(value) {
   ui.connectionText.textContent = value ? "Con conexión" : "Sin conexión";
   ui.offlineHint.hidden = value;
   ui.catalogOfflineHint.hidden = value;
+  ui.inventoryOfflineHint.hidden = value;
   render();
 }
 
@@ -346,6 +507,109 @@ async function saveChange(transform, success) {
       render();
     }
     throw error;
+  }
+}
+
+function fillSelect(select, entries, selectedId) {
+  select.replaceChildren();
+  for (const entry of entries) select.add(new Option(entry.label, entry.id));
+  if (selectedId && entries.some((entry) => entry.id === selectedId)) select.value = selectedId;
+}
+
+function openStockDialog(mode, item = null) {
+  if (!connected) return;
+  stockMode = { mode, item };
+  ui.stockError.hidden = true;
+  ui.stockProductField.hidden = mode !== "add";
+  ui.stockSourceField.hidden = mode !== "move";
+  ui.stockTargetField.hidden = mode === "remove";
+  ui.stockDialogTitle.textContent = { add: "Añadir existencias", remove: "Retirar unidades", move: "Mover unidades", purchase: "Guardar compra" }[mode];
+  ui.stockTargetLabel.textContent = mode === "move" ? "Contenedor de destino" : "Contenedor";
+  ui.stockSubmit.textContent = mode === "remove" ? "Retirar" : mode === "move" ? "Mover" : "Guardar";
+  fillSelect(ui.stockProduct, [...state.productos].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")).map((entry) => ({ id: entry.id, label: entry.nombre })), item?.productoId);
+  const containers = [...state.contenedores].sort((a, b) => containerLabel(a.id).localeCompare(containerLabel(b.id), "es")).map((entry) => ({ id: entry.id, label: containerLabel(entry.id) }));
+  fillSelect(ui.stockSource, containers, item?.contenedorId);
+  fillSelect(ui.stockTarget, containers, mode === "add" ? item?.contenedorId : null);
+  if (mode === "move" && ui.stockTarget.value === item.contenedorId) {
+    ui.stockTarget.value = containers.find((entry) => entry.id !== item.contenedorId)?.id ?? "";
+  }
+  ui.stockQuantity.value = String(mode === "purchase" ? item.cantidad : 1);
+  ui.stockDialog.showModal();
+  (mode === "add" ? ui.stockProduct : ui.stockQuantity).focus();
+}
+
+async function submitStock(event) {
+  event.preventDefault();
+  if (!stockMode) return;
+  ui.stockError.hidden = true;
+  ui.stockSubmit.disabled = true;
+  const { mode, item } = stockMode;
+  const cantidad = Number(ui.stockQuantity.value);
+  const productoId = mode === "add" ? ui.stockProduct.value : item.productoId;
+  const contenedorId = mode === "add" ? ui.stockTarget.value : item.contenedorId;
+  const targetId = ui.stockTarget.value;
+  const newId = crypto.randomUUID();
+  try {
+    if (mode === "add") {
+      await saveChange((current) => addStock(current, { id: newId, productoId, contenedorId, cantidad }), "Existencias añadidas.");
+    } else if (mode === "remove") {
+      await saveChange((current) => removeStock(current, { productoId, contenedorId, cantidad }), "Unidades retiradas.");
+    } else if (mode === "move") {
+      await saveChange((current) => moveStock(current, { id: newId, productoId, fromContainerId: contenedorId, toContainerId: targetId, cantidad }), "Unidades trasladadas.");
+    } else if (mode === "purchase") {
+      await saveChange((current) => completeShoppingItem(current, { itemId: item.id, contenedorId: targetId, cantidad, stockId: newId }), "Compra guardada en el inventario.");
+    }
+    ui.stockDialog.close();
+    stockMode = null;
+  } catch (error) {
+    showError(error, ui.stockError);
+  } finally {
+    ui.stockSubmit.disabled = false;
+  }
+}
+
+async function submitShopping(event) {
+  event.preventDefault();
+  ui.shoppingError.hidden = true;
+  ui.shoppingSubmit.disabled = true;
+  try {
+    const name = cleanName(ui.shoppingName.value);
+    const cantidad = Number(ui.shoppingQuantity.value);
+    const matching = matchingProduct();
+    const typeChoice = ui.shoppingType.value;
+    const newTypeName = ui.shoppingNewType.value;
+    const typeId = crypto.randomUUID();
+    const productId = crypto.randomUUID();
+    const itemId = crypto.randomUUID();
+    await saveChange((current) => {
+      let next = current;
+      let existing = current.productos.find((entry) => normalizedSearch(entry.nombre) === normalizedSearch(name));
+      if (!existing) {
+        const assignedTypeId = typeChoice === "new" ? typeId : typeChoice;
+        if (typeChoice === "new") next = createTipo(next, { id: typeId, nombre: newTypeName });
+        next = createProducto(next, { id: productId, tipoId: assignedTypeId, nombre: name });
+        existing = next.productos.find((entry) => entry.id === productId);
+      }
+      return addShoppingItem(next, { id: itemId, productoId: existing.id, cantidad });
+    }, matching ? "Producto añadido a la lista." : "Producto creado y añadido a la lista.");
+    ui.shoppingName.value = "";
+    ui.shoppingQuantity.value = "1";
+    ui.shoppingNewType.value = "";
+    updateShoppingSuggestions();
+  } catch (error) {
+    showError(error, ui.shoppingError);
+  } finally {
+    ui.shoppingSubmit.disabled = !connected;
+  }
+}
+
+async function discardShoppingItem(id) {
+  const item = state.compras.find((entry) => entry.id === id);
+  if (!item || !window.confirm(`¿Quitar «${productName(item.productoId)}» de la lista de la compra?`)) return;
+  try {
+    await saveChange((current) => removeShoppingItem(current, id), "Producto quitado de la lista.");
+  } catch (error) {
+    showError(error);
   }
 }
 
@@ -534,6 +798,10 @@ async function removeProduct(id) {
     showToast("Retira sus existencias antes de borrar el producto.", true);
     return;
   }
+  if (state.compras.some((entry) => entry.productoId === id)) {
+    showToast("Retira el producto de la lista de la compra antes de borrarlo.", true);
+    return;
+  }
   if (!window.confirm(`¿Eliminar el producto «${product.nombre}»? Esta acción no se puede deshacer.`)) return;
   try {
     await saveChange((current) => deleteProducto(current, id), "Producto eliminado.");
@@ -568,20 +836,35 @@ function exportJson() {
 }
 
 function csvValue(value) {
-  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+  const raw = String(value ?? "");
+  const safe = /^[=+@\-\t\r]/u.test(raw) ? `'${raw}` : raw;
+  return `"${safe.replaceAll('"', '""')}"`;
 }
 
 function exportCsv() {
   if (!state) return;
-  const rows = [["Estancia", "Contenedor"]];
+  const rows = [["Sección", "Estancia", "Contenedor", "Categoría", "Producto", "Unidades"]];
   for (const room of state.estancias) {
     const containers = state.contenedores.filter((entry) => entry.estanciaId === room.id);
-    if (containers.length === 0) rows.push([room.nombre, ""]);
-    for (const container of containers) rows.push([room.nombre, container.nombre]);
+    if (containers.length === 0) rows.push(["Ubicación", room.nombre, "", "", "", ""]);
+    for (const container of containers) rows.push(["Ubicación", room.nombre, container.nombre, "", "", ""]);
+  }
+  for (const product of state.productos) {
+    rows.push(["Catálogo", "", "", state.tipos.find((entry) => entry.id === product.tipoId)?.nombre ?? "", product.nombre, ""]);
+  }
+  for (const stock of state.existencias) {
+    const container = state.contenedores.find((entry) => entry.id === stock.contenedorId);
+    const room = state.estancias.find((entry) => entry.id === container?.estanciaId);
+    const product = state.productos.find((entry) => entry.id === stock.productoId);
+    rows.push(["Inventario", room?.nombre ?? "", container?.nombre ?? "", state.tipos.find((entry) => entry.id === product?.tipoId)?.nombre ?? "", product?.nombre ?? "", stock.cantidad]);
+  }
+  for (const item of state.compras) {
+    const product = state.productos.find((entry) => entry.id === item.productoId);
+    rows.push(["Compra pendiente", "", "", state.tipos.find((entry) => entry.id === product?.tipoId)?.nombre ?? "", product?.nombre ?? "", item.cantidad]);
   }
   const csv = `\uFEFF${rows.map((row) => row.map(csvValue).join(",")).join("\r\n")}`;
-  downloadFile(csv, `despensa-ubicaciones-${fileDate()}.csv`, "text/csv;charset=utf-8");
-  showToast("CSV de ubicaciones descargado.");
+  downloadFile(csv, `despensa-datos-${fileDate()}.csv`, "text/csv;charset=utf-8");
+  showToast("CSV de datos descargado.");
 }
 
 async function prepareImport(file) {
@@ -589,7 +872,7 @@ async function prepareImport(file) {
   if (file.size > 5_000_000) throw new Error("El archivo supera el tamaño máximo de 5 MB.");
   const parsed = parseImportJson(await file.text());
   pendingImport = parsed;
-  ui.importSummary.textContent = `El archivo contiene ${parsed.estancias.length} estancias, ${parsed.contenedores.length} contenedores, ${parsed.tipos.length} tipos, ${parsed.productos.length} productos y ${parsed.existencias.length} existencias.`;
+  ui.importSummary.textContent = `El archivo contiene ${parsed.estancias.length} estancias, ${parsed.contenedores.length} contenedores, ${parsed.tipos.length} tipos, ${parsed.productos.length} productos, ${parsed.existencias.length} existencias y ${parsed.compras.length} productos pendientes de compra.`;
   ui.importDialog.showModal();
 }
 
@@ -649,6 +932,13 @@ function setupEvents() {
   ui.addProduct.addEventListener("click", () => openEditor("product-create"));
   ui.renameType.addEventListener("click", () => openEditor("type-rename", selectedTypeId));
   ui.deleteType.addEventListener("click", removeType);
+  ui.addStock.addEventListener("click", () => openStockDialog("add"));
+  ui.stockForm.addEventListener("submit", submitStock);
+  $("stock-close").addEventListener("click", () => ui.stockDialog.close());
+  $("stock-cancel").addEventListener("click", () => ui.stockDialog.close());
+  ui.shoppingForm.addEventListener("submit", submitShopping);
+  ui.shoppingName.addEventListener("input", updateShoppingSuggestions);
+  ui.shoppingType.addEventListener("change", () => { ui.shoppingNewTypeField.hidden = ui.shoppingType.value !== "new"; });
   $("edit-close").addEventListener("click", () => ui.editDialog.close());
   $("edit-cancel").addEventListener("click", () => ui.editDialog.close());
   $("export-json").addEventListener("click", exportJson);
