@@ -71,6 +71,7 @@ const ui = {
   addType: $("add-type"),
   addProduct: $("add-product"),
   catalogOfflineHint: $("catalog-offline-hint"),
+  shoppingOfflineHint: $("shopping-offline-hint"),
   inventoryOfflineHint: $("inventory-offline-hint"),
   addStock: $("add-stock"),
   stockTotal: $("stock-total"),
@@ -476,6 +477,7 @@ function setConnection(value) {
   ui.connectionText.textContent = value ? "Con conexión" : "Sin conexión";
   ui.offlineHint.hidden = value;
   ui.catalogOfflineHint.hidden = value;
+  ui.shoppingOfflineHint.hidden = value;
   ui.inventoryOfflineHint.hidden = value;
   render();
 }
@@ -936,6 +938,7 @@ function setupNavigation() {
         else item.removeAttribute("aria-current");
       }
       for (const section of document.querySelectorAll(".view")) section.hidden = section.id !== `view-${view}`;
+      window.scrollTo(0, 0);
     });
   }
 }

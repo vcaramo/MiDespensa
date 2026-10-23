@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#153b32" />
-    <meta name="description" content="Organiza las ubicaciones y el catálogo de tu despensa." />
+    <meta name="description" content="Consulta tu inventario y organiza la lista de la compra de tu despensa." />
     <title>Despensa · Tu hogar en orden</title>
     <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="./manifest.webmanifest" />
@@ -20,9 +20,10 @@
             <span class="brand-text">despensa<span class="brand-dot">.</span></span>
           </div>
           <nav class="primary-nav" aria-label="Secciones">
-            <button type="button" class="nav-link is-active" data-view="ubicaciones" aria-current="page">Ubicaciones</button>
+            <button type="button" class="nav-link is-active" data-view="inventario" aria-current="page">Inventario</button>
+            <button type="button" class="nav-link" data-view="compra">Lista de la compra</button>
+            <button type="button" class="nav-link" data-view="ubicaciones">Ubicaciones</button>
             <button type="button" class="nav-link" data-view="catalogo">Catálogo</button>
-            <button type="button" class="nav-link" data-view="inventario">Inventario</button>
           </nav>
           <div id="connection-status" class="connection-status is-checking" role="status" aria-live="polite">
             <span class="status-dot" aria-hidden="true"></span>
@@ -32,7 +33,7 @@
       </header>
 
       <main class="main-content">
-        <section id="view-ubicaciones" class="view" aria-labelledby="page-title">
+        <section id="view-ubicaciones" class="view" aria-labelledby="page-title" hidden>
           <div class="hero">
             <div class="hero-copy">
               <p class="eyebrow">TU HOGAR, MÁS CLARO</p>
@@ -128,9 +129,9 @@
           </div>
         </section>
 
-        <section id="view-inventario" class="view" aria-labelledby="inventory-title" hidden>
+        <section id="view-inventario" class="view" aria-labelledby="inventory-title">
           <div class="catalog-intro">
-            <p class="eyebrow">EXISTENCIAS Y COMPRAS</p>
+            <p class="eyebrow">EXISTENCIAS</p>
             <h1 id="inventory-title">Controla lo que tienes.</h1>
             <p>Registra lo que tienes y asígnale un contenedor cuando quieras.</p>
             <div class="catalog-toolbar">
@@ -141,13 +142,26 @@
           <div class="catalog-summary" aria-label="Resumen de inventario">
             <span><strong id="stock-total">0</strong> unidades</span>
             <span><strong id="stock-products">0</strong> productos con existencias</span>
-            <span><strong id="shopping-total">0</strong> pendientes de compra</span>
           </div>
           <div class="inventory-layout">
             <section class="panel" aria-labelledby="stock-heading">
               <div class="panel-heading"><h2 id="stock-heading">Existencias</h2></div>
               <div id="stock-list" class="stock-list"></div>
             </section>
+          </div>
+        </section>
+
+        <section id="view-compra" class="view" aria-labelledby="shopping-title" hidden>
+          <div class="catalog-intro">
+            <p class="eyebrow">PLANIFICA TUS COMPRAS</p>
+            <h1 id="shopping-title">Lista de la compra.</h1>
+            <p>Busca productos del catálogo o crea uno nuevo mientras preparas la lista.</p>
+            <span id="shopping-offline-hint" class="offline-hint" hidden>Sin conexión: puedes consultar, pero los cambios están pausados.</span>
+          </div>
+          <div class="catalog-summary" aria-label="Resumen de la compra">
+            <span><strong id="shopping-total">0</strong> unidades pendientes</span>
+          </div>
+          <div class="shopping-layout">
             <section class="panel" aria-labelledby="shopping-heading">
               <div class="panel-heading"><h2 id="shopping-heading">Lista de la compra</h2></div>
               <form id="shopping-form" class="shopping-form" novalidate>

@@ -21,6 +21,7 @@
 - En el navegador local: una compra se guardó en «Sin asignar» y después se movió al contenedor «Cocina · Nevera».
 - En el navegador local: con 1 unidad pendiente de leche se registraron 4 compradas; el inventario mostró 4 unidades nuevas sin asignar y 0 pendientes.
 - En el navegador local: al retirar la última unidad de salsa apareció la opción de añadirla a la compra; se solicitaron 3 unidades y la lista mostró 3 pendientes. Al retirar de un contenedor todas sus unidades de leche mientras quedaba leche en otro, la opción no apareció.
+- La aplicación abre y vuelve a abrir tras recargar en Inventario. La lista de la compra aparece solo en la segunda pestaña. A 320 px ambas pestañas se ven y la página no tiene desbordamiento horizontal.
 
 ## Alcance de esta versión
 
