@@ -509,6 +509,8 @@ async function submitLogin(event) {
     setPassword(null);
     ui.loginError.textContent = error instanceof AuthenticationError
       ? "Contraseña incorrecta. Vuelve a intentarlo."
+      : error instanceof TypeError && /fetch/i.test(error.message)
+        ? "No se pudo conectar con el servidor. Comprueba tu conexión a Internet y vuelve a intentarlo."
       : error.message;
     ui.loginError.hidden = false;
   } finally {
