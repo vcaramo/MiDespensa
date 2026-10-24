@@ -22,10 +22,15 @@ import {
   removeShoppingItem,
   updateProducto,
 } from "./domain.js";
-import { commitState, loadState, RevisionConflictError } from "./storage.js";
+import { AuthenticationError, checkServer, commitState, hasPassword, loadState, RevisionConflictError, setPassword } from "./storage.js";
 
 const $ = (id) => document.getElementById(id);
 const ui = {
+  loginDialog: $("login-dialog"),
+  loginForm: $("login-form"),
+  loginPassword: $("login-password"),
+  loginError: $("login-error"),
+  loginSubmit: $("login-submit"),
   connection: $("connection-status"),
   connectionText: document.querySelector("#connection-status .status-text"),
   offlineHint: $("offline-hint"),
@@ -483,15 +488,44 @@ function setConnection(value) {
   render();
 }
 
+function showLogin() {
+  setConnection(false);
+  ui.connectionText.textContent = "Contraseña necesaria";
+  if (!ui.loginDialog.open) ui.loginDialog.showModal();
+}
+
+async function submitLogin(event) {
+  event.preventDefault();
+  ui.loginError.hidden = true;
+  ui.loginSubmit.disabled = true;
+  setPassword(ui.loginPassword.value);
+  try {
+    state = await loadState();
+    ui.loginPassword.value = "";
+    ui.loginDialog.close();
+    render();
+    await checkConnection();
+  } catch (error) {
+    setPassword(null);
+    ui.loginError.textContent = error instanceof AuthenticationError
+      ? "Contraseña incorrecta. Vuelve a intentarlo."
+      : error.message;
+    ui.loginError.hidden = false;
+  } finally {
+    ui.loginSubmit.disabled = false;
+  }
+}
+
 async function checkConnection() {
   try {
-    const url = new URL("./api/health", location.href);
-    url.searchParams.set("t", String(Date.now()));
-    const response = await fetch(url, { cache: "no-store", redirect: "error" });
-    const body = response.ok ? (await response.text()).trim() : "";
-    setConnection(response.ok && body === "despensa-ok");
-  } catch {
-    setConnection(false);
+    setConnection(await checkServer());
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      setPassword(null);
+      showLogin();
+    } else {
+      setConnection(false);
+    }
   }
   return connected;
 }
@@ -503,6 +537,7 @@ async function requireConnection() {
 }
 
 async function refreshState() {
+  if (!hasPassword()) return;
   if (!(await checkConnection())) return;
   try {
     const latest = await loadState();
@@ -510,8 +545,13 @@ async function refreshState() {
       state = latest;
       render();
     }
-  } catch {
-    setConnection(false);
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      setPassword(null);
+      showLogin();
+    } else {
+      setConnection(false);
+    }
   }
 }
 
@@ -958,6 +998,8 @@ function setupNavigation() {
 }
 
 function setupEvents() {
+  ui.loginForm.addEventListener("submit", submitLogin);
+  ui.loginDialog.addEventListener("cancel", (event) => event.preventDefault());
   setupNavigation();
   ui.addRoomMain.addEventListener("click", () => openEditor("room-create"));
   ui.addRoomSmall.addEventListener("click", () => openEditor("room-create"));
@@ -1011,14 +1053,7 @@ function setupEvents() {
 
 async function start() {
   setupEvents();
-  try {
-    state = await loadState();
-    render();
-    await checkConnection();
-  } catch (error) {
-    showError(error);
-    ui.connectionText.textContent = "Datos no disponibles";
-  }
+  showLogin();
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
     navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(() => {});
   }

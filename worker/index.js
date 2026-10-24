@@ -1,29 +1,21 @@
-import { createRemoteJWKSet, jwtVerify } from "jose";
 import { DurableObject } from "cloudflare:workers";
 import { initialState, jsonResponse, MAX_STATE_BYTES, nextState } from "./state.js";
 
-const keySets = new Map();
-
 async function authorized(request, env) {
-  if (!env.ACCESS_TEAM_DOMAIN || !env.ACCESS_AUD) return false;
-  const token = request.headers.get("Cf-Access-Jwt-Assertion");
-  if (!token) return false;
-  const issuer = `https://${env.ACCESS_TEAM_DOMAIN}.cloudflareaccess.com`;
-  let jwks = keySets.get(issuer);
-  if (!jwks) {
-    jwks = createRemoteJWKSet(new URL(`${issuer}/cdn-cgi/access/certs`));
-    keySets.set(issuer, jwks);
-  }
-  try {
-    await jwtVerify(token, jwks, {
-      issuer,
-      audience: env.ACCESS_AUD,
-      algorithms: ["RS256"],
-    });
-    return true;
-  } catch {
-    return false;
-  }
+  const supplied = request.headers.get("X-Despensa-Password");
+  if (!supplied || supplied.length > 1024) return false;
+  let decoded;
+  try { decoded = decodeURIComponent(supplied); } catch { return false; }
+  const encoder = new TextEncoder();
+  const [actual, expected] = await Promise.all([
+    crypto.subtle.digest("SHA-256", encoder.encode(decoded)),
+    crypto.subtle.digest("SHA-256", encoder.encode(env.APP_PASSWORD)),
+  ]);
+  const a = new Uint8Array(actual);
+  const b = new Uint8Array(expected);
+  let difference = 0;
+  for (let i = 0; i < a.length; i++) difference |= a[i] ^ b[i];
+  return difference === 0;
 }
 
 export async function handleApi(request, env) {
@@ -41,8 +33,13 @@ export async function handleApi(request, env) {
 
 export default {
   async fetch(request, env) {
-    if (new URL(request.url).pathname.startsWith("/api/") && !(await authorized(request, env))) {
-      return jsonResponse({ error: "Acceso no autorizado. Inicia sesión con Cloudflare Access." }, 403);
+    if (new URL(request.url).pathname.startsWith("/api/")) {
+      if (!env.APP_PASSWORD || env.APP_PASSWORD.length < 16) {
+        return jsonResponse({ error: "El acceso todavía no está configurado en Cloudflare." }, 503);
+      }
+      if (!(await authorized(request, env))) {
+        return jsonResponse({ error: "Contraseña incorrecta." }, 401);
+      }
     }
     return handleApi(request, env);
   },
