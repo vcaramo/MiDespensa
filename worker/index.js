@@ -29,29 +29,36 @@ export async function handleApi(request, env) {
     const code = decodeURIComponent(url.pathname.slice("/api/product/".length));
     if (!/^\d{8,14}$/.test(code)) return jsonResponse({ error: "Código de barras no válido." }, 400);
     const fields = "code,product_name,product_name_es,brands,categories,categories_tags,quantity,image_url,product_type";
-    let response;
-    try {
-      response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}?product_type=all&fields=${fields}`, {
-        headers: { "User-Agent": "MiDespensa/1.0 (personal pantry app)" },
-      });
-    } catch {
-      return jsonResponse({ found: false, unavailable: true }, 200);
+    const userAgent = { "User-Agent": "MiDespensa/1.0 (personal pantry app)" };
+    const sources = [
+      { name: "Open Food Facts", url: `https://world.openfoodfacts.org/api/v2/product/${code}?product_type=all&fields=${fields}`, kind: "openfacts" },
+      { name: "Open Beauty Facts", url: `https://world.openbeautyfacts.org/api/v2/product/${code}?fields=${fields}`, kind: "openfacts" },
+      { name: "Open Products Facts", url: `https://world.openproductsfacts.org/api/v2/product/${code}?fields=${fields}`, kind: "openfacts" },
+      { name: "UPCitemdb", url: `https://api.upcitemdb.com/prod/trial/lookup?upc=${code}`, kind: "upc" },
+    ];
+    for (const source of sources) {
+      try {
+        const response = await fetch(source.url, { headers: userAgent });
+        if (!response.ok) continue;
+        const data = await response.json();
+        if (source.kind === "openfacts" && (data.status !== 1 || !data.product)) continue;
+        if (source.kind === "upc" && (data.code !== "OK" || !data.items?.[0])) continue;
+        const product = source.kind === "openfacts" ? data.product : data.items[0];
+        return jsonResponse({
+          found: true,
+          source: source.name,
+          code,
+          name: product.product_name_es || product.product_name || product.title || "",
+          brand: product.brands || product.brand || "",
+          categories: product.categories || product.category || "",
+          categoryTags: Array.isArray(product.categories_tags) ? product.categories_tags : [],
+          quantity: product.quantity || product.size || "",
+          imageUrl: product.image_url || product.images?.[0] || "",
+          productType: product.product_type || "product",
+        });
+      } catch { /* probar la siguiente fuente */ }
     }
-    if (!response.ok) return jsonResponse({ found: false }, 200);
-    const data = await response.json();
-    if (data.status !== 1 || !data.product) return jsonResponse({ found: false }, 200);
-    const product = data.product;
-    return jsonResponse({
-      found: true,
-      code,
-      name: product.product_name_es || product.product_name || "",
-      brand: product.brands || "",
-      categories: product.categories || "",
-      categoryTags: Array.isArray(product.categories_tags) ? product.categories_tags : [],
-      quantity: product.quantity || "",
-      imageUrl: product.image_url || "",
-      productType: product.product_type || "food",
-    });
+    return jsonResponse({ found: false }, 200);
   }
   const usersRoute = url.pathname === "/api/users" || /^\/api\/users\/[^/]+$/.test(url.pathname);
   const productRoute = url.pathname.startsWith("/api/product/");

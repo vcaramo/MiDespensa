@@ -1165,7 +1165,8 @@ async function fillProductFromDatabase(code) {
     if (result.name) ui.editName.value = result.name;
     const category = result.categories?.split(",")[0]?.trim();
     const details = [result.brand, result.quantity, category].filter(Boolean).join(" · ");
-    ui.editSimilar.textContent = details ? `Datos encontrados: ${details}. Revisa la categoría antes de guardar.` : "Datos encontrados. Revisa la categoría antes de guardar.";
+    const source = result.source ? `Fuente: ${result.source}. ` : "";
+    ui.editSimilar.textContent = details ? `${source}Datos encontrados: ${details}. Revisa la categoría antes de guardar.` : `${source}Datos encontrados. Revisa la categoría antes de guardar.`;
     ui.editSimilar.hidden = false;
     showToast("Datos del producto encontrados.");
   } catch {
