@@ -145,6 +145,9 @@ h1, h2, h3 { letter-spacing: -.04em; }
 .product-card .container-actions { margin-top: 15px; }
 
 .inventory-layout { display: block; }
+.low-stock-panel { margin: 22px 0; border-color: #e4c9a5; background: #fffaf2; min-height: 0; }
+.low-stock-panel .panel-heading { border-bottom-color: #f1dfc5; }
+.low-stock-panel .stock-list { padding-bottom: 2px; }
 .inventory-layout .panel { min-width: 0; }
 .inventory-layout .panel-heading h2 { margin: 0; font-size: 19px; }
 .shopping-layout { width: min(100%, 760px); }

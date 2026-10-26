@@ -88,6 +88,9 @@ const ui = {
   stockProducts: $("stock-products"),
   shoppingTotal: $("shopping-total"),
   stockList: $("stock-list"),
+  lowStockPanel: $("low-stock-panel"),
+  lowStockList: $("low-stock-list"),
+  goShoppingFromLow: $("go-shopping-from-low"),
   shoppingList: $("shopping-list"),
   shoppingForm: $("shopping-form"),
   shoppingName: $("shopping-name"),
@@ -390,6 +393,31 @@ function renderInventory() {
   ui.shoppingTotal.textContent = String(state.compras.reduce((total, entry) => total + entry.cantidad, 0));
   ui.addStock.disabled = !connected || !state.productos.length;
   ui.shoppingSubmit.disabled = !connected;
+  const lowStock = state.productos.map((product) => {
+    const minimum = product.stockMinimo ?? 0;
+    const current = state.existencias.filter((entry) => entry.productoId === product.id).reduce((sum, entry) => sum + entry.cantidad, 0);
+    return { product, minimum, current, missing: minimum - current };
+  }).filter((entry) => entry.minimum > 0 && entry.missing > 0).sort((a, b) => b.missing - a.missing || a.product.nombre.localeCompare(b.product.nombre, "es"));
+  ui.lowStockPanel.hidden = lowStock.length === 0;
+  ui.lowStockList.replaceChildren();
+  for (const entry of lowStock) {
+    const row = document.createElement("div");
+    row.className = "stock-row";
+    const details = document.createElement("div");
+    details.className = "stock-details";
+    const name = document.createElement("strong");
+    name.textContent = entry.product.nombre;
+    const count = document.createElement("span");
+    count.textContent = `${entry.current} actuales · mínimo ${entry.minimum} · faltan ${entry.missing}`;
+    details.append(name, count);
+    const pending = state.compras.find((item) => item.productoId === entry.product.id);
+    const action = makeButton(pending ? "En la lista" : "Añadir a la lista", "text-button", () => {
+      if (pending) { document.querySelector('[data-view="compra"]').click(); return; }
+      saveChange((current) => applyMinimumRestock(current, entry.product.id), "Producto añadido a la lista de la compra.").catch(showError);
+    }, !connected || Boolean(pending));
+    row.append(details, action);
+    ui.lowStockList.append(row);
+  }
   populateShoppingTypes();
   updateShoppingSuggestions();
   ui.stockList.replaceChildren();
@@ -1041,6 +1069,7 @@ function setupNavigation() {
 
 function setupEvents() {
   ui.loginForm.addEventListener("submit", submitLogin);
+  ui.goShoppingFromLow.addEventListener("click", () => document.querySelector('[data-view="compra"]').click());
   ui.downloadAutoBackup.addEventListener("click", downloadAutoBackup);
   ui.loginDialog.addEventListener("cancel", (event) => event.preventDefault());
   setupNavigation();
