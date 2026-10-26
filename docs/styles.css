@@ -79,6 +79,15 @@ h1, h2, h3 { letter-spacing: -.04em; }
 .section-heading h2 { margin: 0; font-size: 27px; }
 .section-heading > p { margin: 0 0 2px; color: #859189; font-size: 13px; }
 .locations-layout { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.6fr); gap: 18px; align-items: start; }
+.users-layout { grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr); }
+.user-form { display: grid; gap: 14px; padding-top: 18px; }
+.user-form small { display: block; margin-top: 5px; color: #87948a; font-size: 11px; line-height: 1.4; }
+.users-list { display: grid; gap: 10px; padding-top: 17px; }
+.user-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px; border: 1px solid #e5ebe1; border-radius: 11px; background: #fcfdfa; }
+.user-details { min-width: 0; display: grid; gap: 4px; }
+.user-details strong { overflow-wrap: anywhere; }
+.user-details span { color: #87948a; font-size: 12px; }
+.user-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
 .panel { background: #fff; border: 1px solid #e4e9e1; border-radius: 16px; min-height: 365px; padding: 21px; box-shadow: 0 8px 30px #243b2908; }
 .panel-heading { min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid #edf0e9; }
 .panel-heading h3 { margin: 0; font-size: 19px; }

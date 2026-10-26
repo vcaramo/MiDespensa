@@ -24,6 +24,7 @@
             <button type="button" class="nav-link" data-view="compra">Lista de la compra</button>
             <button type="button" class="nav-link" data-view="ubicaciones">Ubicaciones</button>
             <button type="button" class="nav-link" data-view="catalogo">Catálogo</button>
+            <button id="users-nav" type="button" class="nav-link" data-view="usuarios" hidden>Usuarios</button>
           </nav>
           <div id="connection-status" class="connection-status is-checking" role="status" aria-live="polite">
             <span class="status-dot" aria-hidden="true"></span>
@@ -192,6 +193,31 @@
                 <button id="shopping-submit" class="button button-primary" type="submit">Añadir a la lista</button>
               </form>
               <div id="shopping-list" class="shopping-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="view-usuarios" class="view" aria-labelledby="users-title" hidden>
+          <div class="catalog-intro">
+            <p class="eyebrow">ACCESOS</p>
+            <h1 id="users-title">Gestiona las cuentas.</h1>
+            <p>Crea cuentas para las personas del hogar y decide quién puede administrar la configuración.</p>
+          </div>
+          <div class="locations-layout users-layout">
+            <section class="panel" aria-labelledby="new-user-heading">
+              <div class="panel-heading"><h2 id="new-user-heading">Nueva cuenta</h2></div>
+              <form id="user-form" class="user-form" novalidate>
+                <label class="field"><span>Identificador</span><input id="user-identifier" type="text" maxlength="32" pattern="[a-z0-9][a-z0-9._-]{1,31}" autocomplete="off" required /></label>
+                <label class="field"><span>Nombre</span><input id="user-name" type="text" maxlength="80" required /></label>
+                <label class="field"><span>Perfil</span><select id="user-profile"><option value="usuario">Usuario</option><option value="administrador">Administrador</option></select></label>
+                <label class="field"><span>Contraseña inicial</span><input id="user-password" type="password" minlength="16" autocomplete="new-password" required /><small>Usa al menos 16 caracteres. La contraseña no se muestra después.</small></label>
+                <p id="user-form-error" class="form-error" role="alert" hidden></p>
+                <button id="user-submit" class="button button-primary" type="submit">Crear cuenta</button>
+              </form>
+            </section>
+            <section class="panel" aria-labelledby="users-heading">
+              <div class="panel-heading"><div><p class="panel-kicker">CUENTAS DEL HOGAR</p><h2 id="users-heading">Usuarios</h2></div></div>
+              <div id="users-list" class="users-list"></div>
             </section>
           </div>
         </section>

@@ -23,7 +23,7 @@ import {
   updateProducto,
   applyMinimumRestock,
 } from "./domain.js";
-import { AuthenticationError, checkServer, commitState, hasPassword, listBackups, listHistory, loadBackup, loadState, login, RevisionConflictError, setPassword } from "./storage.js";
+import { AuthenticationError, checkServer, commitState, createUser, hasPassword, listBackups, listHistory, listUsers, loadBackup, loadState, login, RevisionConflictError, setPassword, updateUser } from "./storage.js";
 
 const $ = (id) => document.getElementById(id);
 const ui = {
@@ -124,6 +124,15 @@ const ui = {
   shoppingQuantity: $("shopping-quantity"),
   shoppingError: $("shopping-error"),
   shoppingSubmit: $("shopping-submit"),
+  usersNav: $("users-nav"),
+  userForm: $("user-form"),
+  userIdentifier: $("user-identifier"),
+  userName: $("user-name"),
+  userProfile: $("user-profile"),
+  userPassword: $("user-password"),
+  userFormError: $("user-form-error"),
+  userSubmit: $("user-submit"),
+  usersList: $("users-list"),
   stockDialog: $("stock-dialog"),
   stockForm: $("stock-form"),
   stockDialogTitle: $("stock-dialog-title"),
@@ -144,6 +153,7 @@ const ui = {
 };
 
 let state;
+let currentUser = null;
 let activeShoppingStore = "general";
 let automaticBackups = [];
 let selectedRoomId = null;
@@ -554,6 +564,54 @@ function renderLastExport() {
     : `Última copia JSON: ${new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeStyle: "short" }).format(date)}.`;
 }
 
+async function refreshUsers() {
+  if (currentUser?.perfil !== "administrador") return;
+  try {
+    const result = await listUsers();
+    ui.usersList.replaceChildren();
+    for (const user of result.users ?? []) {
+      const row = document.createElement("div");
+      row.className = "user-row";
+      const details = document.createElement("div");
+      details.className = "user-details";
+      const name = document.createElement("strong");
+      name.textContent = user.nombre;
+      const meta = document.createElement("span");
+      meta.textContent = `${user.identificador} · ${user.perfil === "administrador" ? "Administrador" : "Usuario"}${user.activo ? "" : " · Inactivo"}`;
+      details.append(name, meta);
+      const actions = document.createElement("div");
+      actions.className = "user-actions";
+      actions.append(makeButton(user.activo ? "Desactivar" : "Activar", "text-button", async () => {
+        if (user.activo && !window.confirm(`¿Desactivar la cuenta de ${user.nombre}?`)) return;
+        try { await updateUser(user.id, { activo: !user.activo }); await refreshUsers(); showToast(user.activo ? "Cuenta desactivada." : "Cuenta activada."); } catch (error) { showError(error); }
+      }, user.id === currentUser.id && user.activo));
+      actions.append(makeButton("Restablecer contraseña", "text-button", async () => {
+        const value = window.prompt("Nueva contraseña (mínimo 16 caracteres)");
+        if (value === null) return;
+        try { await updateUser(user.id, { password: value }); showToast("Contraseña actualizada."); } catch (error) { showError(error); }
+      }));
+      row.append(details, actions);
+      ui.usersList.append(row);
+    }
+    if (!(result.users ?? []).length) ui.usersList.append(makeEmptyState("👤", "No hay cuentas", "Crea la primera cuenta del hogar."));
+  } catch (error) { showError(error); }
+}
+
+async function submitUser(event) {
+  event.preventDefault();
+  ui.userFormError.hidden = true;
+  ui.userSubmit.disabled = true;
+  try {
+    await createUser({ identificador: ui.userIdentifier.value.trim(), nombre: ui.userName.value.trim(), perfil: ui.userProfile.value, password: ui.userPassword.value });
+    ui.userForm.reset();
+    await refreshUsers();
+    showToast("Cuenta creada.");
+  } catch (error) {
+    ui.userFormError.textContent = error.message;
+    ui.userFormError.hidden = false;
+  } finally { ui.userSubmit.disabled = false; }
+}
+
 function render() {
   if (!state) return;
   if (!state.estancias.some((entry) => entry.id === selectedRoomId)) {
@@ -570,6 +628,7 @@ function render() {
   renderCatalog();
   renderInventory();
   renderLastExport();
+  ui.usersNav.hidden = currentUser?.perfil !== "administrador";
 }
 
 function setConnection(value) {
@@ -595,16 +654,18 @@ async function submitLogin(event) {
   ui.loginError.hidden = true;
   ui.loginSubmit.disabled = true;
   try {
-    await login(ui.loginIdentifier.value.trim(), ui.loginPassword.value);
+    currentUser = await login(ui.loginIdentifier.value.trim(), ui.loginPassword.value);
     setPassword(null);
     state = await loadState();
     await refreshAutoBackupStatus();
     await refreshHistory();
+    await refreshUsers();
     ui.loginPassword.value = "";
     ui.loginDialog.close();
     render();
     await checkConnection();
   } catch (error) {
+    currentUser = null;
     setPassword(null);
     ui.loginError.textContent = error instanceof AuthenticationError
       ? "Identificador o contraseña incorrectos. Vuelve a intentarlo."
@@ -1246,6 +1307,7 @@ function setupNavigation() {
 
 function setupEvents() {
   ui.loginForm.addEventListener("submit", submitLogin);
+  ui.userForm.addEventListener("submit", submitUser);
   ui.goShoppingFromLow.addEventListener("click", () => document.querySelector('[data-view="compra"]').click());
   ui.goShoppingFromLowSummary.addEventListener("click", (event) => { event.preventDefault(); document.querySelector('[data-view="compra"]').click(); });
   ui.downloadAutoBackup.addEventListener("click", downloadAutoBackup);

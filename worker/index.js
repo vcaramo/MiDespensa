@@ -25,7 +25,8 @@ export async function handleApi(request, env) {
   if (url.pathname === "/api/health" && request.method === "GET") {
     return new Response("despensa-ok", { headers: { "Cache-Control": "no-store, private" } });
   }
-  if ((url.pathname !== "/api/state" && url.pathname !== "/api/backups" && !url.pathname.startsWith("/api/backups/") && url.pathname !== "/api/history") || !["GET", "PUT"].includes(request.method)) {
+  const usersRoute = url.pathname === "/api/users" || /^\/api\/users\/[^/]+$/.test(url.pathname);
+  if ((!usersRoute && url.pathname !== "/api/state" && url.pathname !== "/api/backups" && !url.pathname.startsWith("/api/backups/") && url.pathname !== "/api/history") || !["GET", "PUT", "POST"].includes(request.method)) {
     return jsonResponse({ error: "Ruta no encontrada." }, 404);
   }
   const id = env.DESPENSA_STATE.idFromName("hogar-principal");
@@ -173,6 +174,51 @@ export class DespensaState extends DurableObject {
           .slice(0, 50);
         return jsonResponse({ history });
       }
+      if (url.pathname === "/api/users" || url.pathname.startsWith("/api/users/")) {
+        if (sessionUser.perfil !== "administrador") return jsonResponse({ error: "Solo un administrador puede gestionar usuarios." }, 403);
+        const sanitize = (user) => ({ id: user.id, identificador: user.identificador, nombre: user.nombre, perfil: user.perfil, activo: user.activo !== false });
+        const users = (await this.ctx.storage.get("users")) ?? [];
+        if (url.pathname === "/api/users" && request.method === "GET") return jsonResponse({ users: users.map(sanitize) });
+        if (url.pathname === "/api/users" && request.method === "POST") {
+          const body = await request.json();
+          const identificador = String(body.identificador ?? "").trim().toLowerCase();
+          const nombre = String(body.nombre ?? "").trim();
+          const perfil = body.perfil === "administrador" ? "administrador" : body.perfil === "usuario" ? "usuario" : "";
+          const password = typeof body.password === "string" ? body.password : "";
+          if (!/^[a-z0-9][a-z0-9._-]{1,31}$/.test(identificador) || !nombre || !perfil || password.length < 16) return jsonResponse({ error: "Identificador, nombre, perfil y una contraseña de al menos 16 caracteres son obligatorios." }, 400);
+          if (users.some((user) => user.identificador === identificador)) return jsonResponse({ error: "Ese identificador ya existe." }, 409);
+          const user = { id: crypto.randomUUID(), identificador, nombre, perfil, activo: true, password: await hashPassword(password) };
+          users.push(user);
+          await this.ctx.storage.put("users", users);
+          return jsonResponse(sanitize(user), 201);
+        }
+        const userId = decodeURIComponent(url.pathname.slice("/api/users/".length));
+        const index = users.findIndex((user) => user.id === userId);
+        if (index < 0) return jsonResponse({ error: "Usuario no encontrado." }, 404);
+        if (request.method !== "PUT") return jsonResponse({ error: "MÃ©todo no permitido." }, 405);
+        const body = await request.json();
+        const currentUser = users[index];
+        const next = { ...currentUser };
+        if (body.nombre !== undefined) {
+          const nombre = String(body.nombre).trim();
+          if (!nombre) return jsonResponse({ error: "El nombre no puede estar vacío." }, 400);
+          next.nombre = nombre;
+        }
+        if (body.perfil !== undefined) {
+          if (!["administrador", "usuario"].includes(body.perfil)) return jsonResponse({ error: "Perfil no válido." }, 400);
+          next.perfil = body.perfil;
+        }
+        if (body.activo !== undefined) next.activo = Boolean(body.activo);
+        if (body.password !== undefined) {
+          if (typeof body.password !== "string" || body.password.length < 16) return jsonResponse({ error: "La contraseña debe tener al menos 16 caracteres." }, 400);
+          next.password = await hashPassword(body.password);
+        }
+        const activeAdmins = users.filter((user) => user.activo !== false && user.perfil === "administrador");
+        if ((next.activo === false || next.perfil !== "administrador") && currentUser.perfil === "administrador" && activeAdmins.length === 1) return jsonResponse({ error: "Debe quedar al menos un administrador activo." }, 400);
+        users[index] = next;
+        await this.ctx.storage.put("users", users);
+        return jsonResponse(sanitize(next));
+      }
       if (request.method === "GET") {
         if (stored !== undefined) {
           const current = JSON.parse(stored);
@@ -198,13 +244,9 @@ export class DespensaState extends DurableObject {
       if (request.method === "PUT" && sessionUser.perfil === "usuario") {
         const proposed = input.state;
         const same = (key) => JSON.stringify(currentStored[key] ?? []) === JSON.stringify(proposed[key] ?? []);
-        const onlyAddsOrEdits = (key) => {
-          const before = new Map((currentStored[key] ?? []).map((entry) => [entry.id, entry]));
-          return (proposed[key] ?? []).every((entry) => !before.has(entry.id) || JSON.stringify(before.get(entry.id)) !== JSON.stringify(entry));
-        };
         const noDeletes = (key) => (currentStored[key] ?? []).every((entry) => (proposed[key] ?? []).some((next) => next.id === entry.id));
         const legacyRoute = !currentStored.rutasCompra && Array.isArray(proposed.rutasCompra) && proposed.rutasCompra.length === 1 && proposed.rutasCompra[0].id === "general" && JSON.stringify(proposed.rutasCompra[0].ordenTipoIds) === JSON.stringify(currentStored.tipos.map((type) => type.id));
-        if ((!same("estancias") && !same("contenedores")) || (currentStored.rutasCompra && !same("rutasCompra")) || (!currentStored.rutasCompra && proposed.rutasCompra && !legacyRoute) || !onlyAddsOrEdits("tipos") || !noDeletes("tipos") || !onlyAddsOrEdits("productos") || !noDeletes("productos")) {
+        if ((!same("estancias") && !same("contenedores")) || (currentStored.rutasCompra && !same("rutasCompra")) || (!currentStored.rutasCompra && proposed.rutasCompra && !legacyRoute) || !noDeletes("tipos") || !noDeletes("productos")) {
           return jsonResponse({ error: "Tu perfil no permite modificar la estructura de ubicaciones, tiendas ni eliminar elementos del catálogo." }, 403);
         }
       }

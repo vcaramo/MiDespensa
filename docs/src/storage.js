@@ -88,6 +88,31 @@ export async function listHistory() {
   return response.json();
 }
 
+async function readJsonResponse(response) {
+  if (!response.ok) {
+    let message = "No se pudo completar la operación.";
+    try { const body = await response.json(); if (typeof body.error === "string") message = body.error; } catch { /* respuesta no JSON */ }
+    throw new Error(message);
+  }
+  return response.json();
+}
+
+export async function listUsers() {
+  return readJsonResponse(await apiFetch(new URL("../api/users", import.meta.url)));
+}
+
+export async function createUser(input) {
+  return readJsonResponse(await apiFetch(new URL("../api/users", import.meta.url), {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input),
+  }));
+}
+
+export async function updateUser(id, input) {
+  return readJsonResponse(await apiFetch(new URL(`../api/users/${encodeURIComponent(id)}`, import.meta.url), {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input),
+  }));
+}
+
 export async function commitState(expectedRevision, transform) {
   const current = await loadState();
   if (current.revision !== expectedRevision) throw new RevisionConflictError();
