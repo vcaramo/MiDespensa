@@ -205,6 +205,7 @@
             <button id="export-csv" class="button button-outline" type="button">Descargar CSV</button>
             <button id="import-json" class="button button-outline" type="button">Importar JSON</button>
             <button id="download-auto-backup" class="button button-outline" type="button" disabled>Descargar copia automática</button>
+            <button id="restore-auto-backup" class="button button-outline" type="button" disabled>Restaurar copia automática</button>
             <input id="import-file" type="file" accept=".json,application/json" hidden />
           </div>
         </section>
@@ -296,6 +297,17 @@
         <button id="import-cancel" type="button" class="button button-outline">Cancelar</button>
         <button id="import-confirm" type="button" class="button button-danger">Reemplazar datos</button>
       </div>
+    </dialog>
+
+    <dialog id="restore-backup-dialog" class="modal">
+      <form id="restore-backup-form" novalidate>
+        <div class="modal-head"><div><p class="eyebrow">COPIA AUTOMÁTICA</p><h2>Restaurar una copia</h2></div><button id="restore-backup-close" type="button" class="close-button" aria-label="Cerrar">×</button></div>
+        <label class="field"><span>Fecha de la copia</span><select id="restore-backup-date"></select></label>
+        <p id="restore-backup-preview" class="import-summary"></p>
+        <p class="import-warning">Esta acción sustituirá los datos compartidos actuales. La copia actual se conservará antes de restaurar.</p>
+        <p id="restore-backup-error" class="form-error" role="alert" hidden></p>
+        <div class="modal-actions"><button id="restore-backup-cancel" type="button" class="button button-outline">Cancelar</button><button id="restore-backup-submit" type="submit" class="button button-danger">Restaurar copia</button></div>
+      </form>
     </dialog>
 
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>

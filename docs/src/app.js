@@ -68,6 +68,13 @@ const ui = {
   lastExport: $("last-export"),
   autoBackupStatus: $("auto-backup-status"),
   downloadAutoBackup: $("download-auto-backup"),
+  restoreAutoBackup: $("restore-auto-backup"),
+  restoreBackupDialog: $("restore-backup-dialog"),
+  restoreBackupForm: $("restore-backup-form"),
+  restoreBackupDate: $("restore-backup-date"),
+  restoreBackupPreview: $("restore-backup-preview"),
+  restoreBackupError: $("restore-backup-error"),
+  restoreBackupSubmit: $("restore-backup-submit"),
   toast: $("toast"),
   typeCount: $("type-count"),
   productCount: $("product-count"),
@@ -131,6 +138,7 @@ const ui = {
 };
 
 let state;
+let automaticBackups = [];
 let selectedRoomId = null;
 let selectedTypeId = null;
 let connected = false;
@@ -580,11 +588,13 @@ async function submitLogin(event) {
 async function refreshAutoBackupStatus() {
   try {
     const result = await listBackups();
+    automaticBackups = result.backups ?? [];
     const latest = result.backups?.[0];
     ui.autoBackupStatus.textContent = latest
       ? `Copia automática más reciente: ${new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(`${latest.date}T00:00:00Z`))}. Se conservan hasta 30 días.`
       : "La primera copia automática se creará al consultar los datos.";
     ui.downloadAutoBackup.disabled = !latest;
+    ui.restoreAutoBackup.disabled = automaticBackups.length === 0;
     ui.downloadAutoBackup.dataset.date = latest?.date ?? "";
   } catch {
     ui.autoBackupStatus.textContent = "No se pudo consultar el estado de las copias automáticas.";
@@ -601,6 +611,48 @@ async function downloadAutoBackup() {
     showToast("Copia automática descargada.");
   } catch (error) {
     showError(error);
+  }
+}
+
+async function openRestoreBackup() {
+  if (!automaticBackups.length) return;
+  ui.restoreBackupError.hidden = true;
+  ui.restoreBackupDate.replaceChildren();
+  for (const backup of automaticBackups) {
+    const option = document.createElement("option");
+    option.value = backup.date;
+    option.textContent = backup.date;
+    ui.restoreBackupDate.append(option);
+  }
+  await updateRestorePreview();
+  ui.restoreBackupDialog.showModal();
+}
+
+async function updateRestorePreview() {
+  try {
+    const backup = await loadBackup(ui.restoreBackupDate.value);
+    ui.restoreBackupPreview.textContent = `La copia contiene ${backup.estancias.length} estancias, ${backup.contenedores.length} contenedores, ${backup.productos.length} productos, ${backup.existencias.length} existencias y ${backup.compras.length} compras pendientes.`;
+    ui.restoreBackupPreview.dataset.loaded = JSON.stringify(backup);
+  } catch (error) {
+    ui.restoreBackupPreview.textContent = error.message;
+    ui.restoreBackupPreview.dataset.loaded = "";
+  }
+}
+
+async function submitRestoreBackup(event) {
+  event.preventDefault();
+  ui.restoreBackupError.hidden = true;
+  ui.restoreBackupSubmit.disabled = true;
+  try {
+    const raw = ui.restoreBackupPreview.dataset.loaded;
+    if (!raw) throw new Error("No se pudo cargar la copia seleccionada.");
+    const backup = JSON.parse(raw);
+    await saveChange(() => backup, "Copia automática restaurada.");
+    ui.restoreBackupDialog.close();
+  } catch (error) {
+    showError(error, ui.restoreBackupError);
+  } finally {
+    ui.restoreBackupSubmit.disabled = false;
   }
 }
 
@@ -1151,6 +1203,11 @@ function setupEvents() {
   ui.goShoppingFromLow.addEventListener("click", () => document.querySelector('[data-view="compra"]').click());
   ui.goShoppingFromLowSummary.addEventListener("click", (event) => { event.preventDefault(); document.querySelector('[data-view="compra"]').click(); });
   ui.downloadAutoBackup.addEventListener("click", downloadAutoBackup);
+  ui.restoreAutoBackup.addEventListener("click", openRestoreBackup);
+  ui.restoreBackupForm.addEventListener("submit", submitRestoreBackup);
+  ui.restoreBackupDate.addEventListener("change", updateRestorePreview);
+  $("restore-backup-close").addEventListener("click", () => ui.restoreBackupDialog.close());
+  $("restore-backup-cancel").addEventListener("click", () => ui.restoreBackupDialog.close());
   ui.loginDialog.addEventListener("cancel", (event) => event.preventDefault());
   setupNavigation();
   ui.addRoomMain.addEventListener("click", () => openEditor("room-create"));
