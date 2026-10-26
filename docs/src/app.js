@@ -42,6 +42,8 @@ const ui = {
   containerList: $("container-list"),
   containersHeading: $("containers-heading"),
   roomActions: $("room-actions"),
+  toggleRoomPanel: $("toggle-room-panel"),
+  toggleContainerPanel: $("toggle-container-panel"),
   addRoomMain: $("add-room-main"),
   addRoomSmall: $("add-room-small"),
   addContainer: $("add-container"),
@@ -165,6 +167,8 @@ let importBusy = false;
 let lastExportAt = null;
 let toastTimeout;
 let stockMode = null;
+let roomPanelExpanded = true;
+let containerPanelExpanded = true;
 
 function showToast(message, isError = false) {
   clearTimeout(toastTimeout);
@@ -209,6 +213,16 @@ function makeEmptyState(symbol, title, description) {
   return wrapper;
 }
 
+function togglePanel(button, elements) {
+  const expanded = button.getAttribute("aria-expanded") !== "false";
+  if (button === ui.toggleRoomPanel) roomPanelExpanded = !expanded;
+  if (button === ui.toggleContainerPanel) containerPanelExpanded = !expanded;
+  button.setAttribute("aria-expanded", String(!expanded));
+  button.setAttribute("aria-label", expanded ? "Desplegar panel" : "Plegar panel");
+  button.textContent = expanded ? "⌄" : "⌃";
+  for (const element of elements) element.hidden = expanded;
+}
+
 function renderRooms() {
   ui.roomList.replaceChildren();
   if (state.estancias.length === 0) {
@@ -249,7 +263,9 @@ function renderContainers() {
   ui.containerList.replaceChildren();
   const room = state.estancias.find((entry) => entry.id === selectedRoomId);
   ui.containersHeading.textContent = room?.nombre ?? "Elige una estancia";
-  ui.roomActions.hidden = !room || !canManageLocations;
+  ui.roomList.hidden = !roomPanelExpanded;
+  ui.roomActions.hidden = !room || !canManageLocations || !containerPanelExpanded;
+  ui.containerList.hidden = !containerPanelExpanded;
   ui.addContainer.hidden = !canManageLocations;
   ui.addContainer.disabled = !room || !connected;
   ui.renameRoom.disabled = !room || !connected;
@@ -1331,6 +1347,8 @@ function setupEvents() {
   $("restore-backup-cancel").addEventListener("click", () => ui.restoreBackupDialog.close());
   ui.loginDialog.addEventListener("cancel", (event) => event.preventDefault());
   setupNavigation();
+  ui.toggleRoomPanel.addEventListener("click", () => togglePanel(ui.toggleRoomPanel, [ui.roomList]));
+  ui.toggleContainerPanel.addEventListener("click", () => togglePanel(ui.toggleContainerPanel, [ui.roomActions, ui.containerList]));
   ui.addRoomMain.addEventListener("click", () => openEditor("room-create"));
   ui.addRoomSmall.addEventListener("click", () => openEditor("room-create"));
   ui.addContainer.addEventListener("click", () => openEditor("container-create"));

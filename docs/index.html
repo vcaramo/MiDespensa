@@ -69,7 +69,10 @@
             <section class="panel room-panel" aria-labelledby="rooms-heading">
               <div class="panel-heading">
                 <h3 id="rooms-heading">Estancias</h3>
-                <button id="add-room-small" class="icon-button" type="button" aria-label="Añadir estancia" title="Añadir estancia">+</button>
+                <div class="panel-heading-actions">
+                  <button id="add-room-small" class="icon-button" type="button" aria-label="Añadir estancia" title="Añadir estancia">+</button>
+                  <button id="toggle-room-panel" class="collapse-button" type="button" aria-expanded="true" aria-controls="room-list" aria-label="Plegar estancias">⌃</button>
+                </div>
               </div>
               <div id="room-list" class="room-list"></div>
             </section>
@@ -80,7 +83,10 @@
                   <p class="panel-kicker">DENTRO DE ESTA ESTANCIA</p>
                   <h3 id="containers-heading">Elige una estancia</h3>
                 </div>
-                <button id="add-container" class="button button-secondary" type="button" disabled>+ Contenedor</button>
+                <div class="panel-heading-actions">
+                  <button id="add-container" class="button button-secondary" type="button" disabled>+ Contenedor</button>
+                  <button id="toggle-container-panel" class="collapse-button" type="button" aria-expanded="true" aria-controls="container-list" aria-label="Plegar contenedores">⌃</button>
+                </div>
               </div>
               <div id="room-actions" class="room-actions" hidden>
                 <button id="rename-room" class="text-button" type="button">Renombrar estancia</button>
