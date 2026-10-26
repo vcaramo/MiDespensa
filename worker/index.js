@@ -189,7 +189,8 @@ export class DespensaState extends DurableObject {
           return (proposed[key] ?? []).every((entry) => !before.has(entry.id) || JSON.stringify(before.get(entry.id)) !== JSON.stringify(entry));
         };
         const noDeletes = (key) => (currentStored[key] ?? []).every((entry) => (proposed[key] ?? []).some((next) => next.id === entry.id));
-        if (!same("estancias") && !same("contenedores") || !same("rutasCompra") || !onlyAddsOrEdits("tipos") || !noDeletes("tipos") || !onlyAddsOrEdits("productos") || !noDeletes("productos")) {
+        const legacyRoute = !currentStored.rutasCompra && Array.isArray(proposed.rutasCompra) && proposed.rutasCompra.length === 1 && proposed.rutasCompra[0].id === "general" && JSON.stringify(proposed.rutasCompra[0].ordenTipoIds) === JSON.stringify(currentStored.tipos.map((type) => type.id));
+        if ((!same("estancias") && !same("contenedores")) || (currentStored.rutasCompra && !same("rutasCompra")) || (!currentStored.rutasCompra && proposed.rutasCompra && !legacyRoute) || !onlyAddsOrEdits("tipos") || !noDeletes("tipos") || !onlyAddsOrEdits("productos") || !noDeletes("productos")) {
           return jsonResponse({ error: "Tu perfil no permite modificar la estructura de ubicaciones, tiendas ni eliminar elementos del catálogo." }, 403);
         }
       }
