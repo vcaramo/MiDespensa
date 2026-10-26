@@ -586,7 +586,7 @@ function setConnection(value) {
 
 function showLogin() {
   setConnection(false);
-  ui.connectionText.textContent = "Contraseña necesaria";
+  ui.connectionText.textContent = "Inicia sesión";
   if (!ui.loginDialog.open) ui.loginDialog.showModal();
 }
 
@@ -594,9 +594,9 @@ async function submitLogin(event) {
   event.preventDefault();
   ui.loginError.hidden = true;
   ui.loginSubmit.disabled = true;
-  await login(ui.loginIdentifier.value.trim(), ui.loginPassword.value);
-  setPassword(null);
   try {
+    await login(ui.loginIdentifier.value.trim(), ui.loginPassword.value);
+    setPassword(null);
     state = await loadState();
     await refreshAutoBackupStatus();
     await refreshHistory();
@@ -607,7 +607,7 @@ async function submitLogin(event) {
   } catch (error) {
     setPassword(null);
     ui.loginError.textContent = error instanceof AuthenticationError
-      ? "Contraseña incorrecta. Vuelve a intentarlo."
+      ? "Identificador o contraseña incorrectos. Vuelve a intentarlo."
       : error instanceof TypeError && /fetch/i.test(error.message)
         ? "No se pudo conectar con el servidor. Comprueba tu conexión a Internet y vuelve a intentarlo."
       : error.message;

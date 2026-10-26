@@ -4,7 +4,7 @@ Despensa personal con ubicaciones, catálogo, inventario y lista de la compra. L
 
 ## Datos compartidos
 
-La rama `desarrollo` sirve la web y una API desde un mismo Cloudflare Worker. El documento completo se guarda como JSON en un Durable Object con almacenamiento SQLite. Todos los dispositivos que usan la contraseña leen ese mismo documento. Cada escritura comprueba la revisión anterior; si otro dispositivo guardó primero, la app recarga los datos y pide repetir el cambio.
+La rama `desarrollo` sirve la web y una API desde un mismo Cloudflare Worker. El documento completo se guarda como JSON en un Durable Object con almacenamiento SQLite. Todos los dispositivos con una sesión autorizada leen ese mismo documento. Cada escritura comprueba la revisión anterior; si otro dispositivo guardó primero, la app recarga los datos y pide repetir el cambio.
 
 El inventario no se guarda en IndexedDB ni en localStorage. La interfaz puede quedar abierta al perder la conexión, pero tras recargar sin conexión no puede consultar el inventario. Los archivos de la interfaz pueden quedar en la caché del navegador; `/api/*` nunca se almacena en el Service Worker.
 
@@ -17,10 +17,10 @@ Para las reglas de datos: `npm test`.
 ## Publicar en Cloudflare
 
 1. Ejecuta `npm install` y `npx wrangler login`. Después, `npm run deploy` publica el Worker `midespensa` con los archivos de `docs/` y el Durable Object.
-2. En **Workers & Pages > midespensa > Settings > Variables and Secrets**, crea un secreto llamado `APP_PASSWORD`. Escribe una contraseña única de al menos 16 caracteres y guárdala. No la incluyas en Git ni la envíes por chat. La aplicación la pide al abrirse en cada dispositivo y solo la mantiene en memoria durante esa sesión.
-3. Abre la URL de `workers.dev`, introduce esa misma contraseña y verifica que aparece el inventario. Si `APP_PASSWORD` no está configurada, la API permanece cerrada y devuelve un error 503.
+2. En **Workers & Pages > midespensa > Settings > Variables and Secrets**, crea un secreto llamado `APP_PASSWORD`. Escribe una contraseña única de al menos 16 caracteres y guárdala. No la incluyas en Git ni la envíes por chat.
+3. Abre la URL de `workers.dev`, usa el identificador `admin` y esa contraseña, y verifica que aparece el inventario. El Worker crea la cuenta inicial del administrador al primer inicio de sesión. Si `APP_PASSWORD` no está configurada, la API de datos permanece cerrada.
 
-La contraseña protege las peticiones de inventario mediante el encabezado privado `X-Despensa-Password`; la interfaz pública no contiene el secreto. Los datos están asociados al Durable Object del Worker. Redeplegar el mismo Worker conserva el documento. No borres el Worker ni su almacenamiento sin una copia JSON exportada.
+El navegador conserva la sesión mediante una cookie segura. Durante la transición, la API también admite la contraseña compartida; se retirará cuando estén completas la gestión de usuarios y las pruebas de permisos. Los datos están asociados al Durable Object del Worker. Redeplegar el mismo Worker conserva el documento. No borres el Worker ni su almacenamiento sin una copia JSON exportada.
 
 ## Pasar los datos actuales
 

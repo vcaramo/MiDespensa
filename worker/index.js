@@ -74,16 +74,20 @@ export class DespensaState extends DurableObject {
       }
       if (!user || !(await verifyPassword(body.password ?? "", user.password))) return jsonResponse({ error: "Credenciales incorrectas." }, 401);
       const session = createSession(user.id);
-      await this.ctx.storage.put(`session:${session.token}`, JSON.stringify(session));
+      await this.ctx.storage.put(`session:${session.token}`, session);
       return new Response(JSON.stringify({ id: user.id, nombre: user.nombre, perfil: user.perfil }), { headers: { "Content-Type": "application/json", "Set-Cookie": sessionCookie(session.token) } });
     }
     const token = sessionToken(request);
-    const session = token ? await this.ctx.storage.get(`session:${token}`) : null;
+    const storedSession = token ? await this.ctx.storage.get(`session:${token}`) : null;
+    const session = typeof storedSession === "string" ? JSON.parse(storedSession) : storedSession;
     if (url.pathname === "/api/auth/logout" && request.method === "POST") {
       if (token) await this.ctx.storage.delete(`session:${token}`);
       return new Response(null, { status: 204, headers: { "Set-Cookie": "despensa_session=; Path=/; Max-Age=0" } });
     }
-    if (url.pathname === "/api/auth/me" && request.method === "GET" && session?.expiresAt > Date.now()) return jsonResponse(users.find((entry) => entry.id === session.userId) ?? null);
+    if (url.pathname === "/api/auth/me" && request.method === "GET" && session?.expiresAt > Date.now()) {
+      const user = users.find((entry) => entry.id === session.userId && entry.activo !== false);
+      if (user) return jsonResponse({ id: user.id, identificador: user.identificador, nombre: user.nombre, perfil: user.perfil });
+    }
     return jsonResponse({ error: "Sesión no válida." }, 401);
   }
 
@@ -139,10 +143,12 @@ export class DespensaState extends DurableObject {
       let sessionUser = { perfil: "administrador" };
       if (!request.headers.get("X-Despensa-Password")) {
         const token = sessionToken(request);
-        const session = token ? await this.ctx.storage.get(`session:${token}`) : null;
+        const storedSession = token ? await this.ctx.storage.get(`session:${token}`) : null;
+        const session = typeof storedSession === "string" ? JSON.parse(storedSession) : storedSession;
         if (!session || session.expiresAt <= Date.now()) return jsonResponse({ error: "Sesión no válida." }, 401);
         const users = (await this.ctx.storage.get("users")) ?? [];
-        sessionUser = users.find((user) => user.id === session.userId) ?? { perfil: "usuario" };
+        sessionUser = users.find((user) => user.id === session.userId && user.activo !== false);
+        if (!sessionUser) return jsonResponse({ error: "Sesión no válida." }, 401);
       }
       if (url.pathname === "/api/backups") {
         if (request.method !== "GET") return jsonResponse({ error: "Método no permitido." }, 405);
