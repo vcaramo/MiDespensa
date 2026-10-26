@@ -66,7 +66,12 @@ export class DespensaState extends DurableObject {
     }
     if (url.pathname === "/api/auth/login" && request.method === "POST") {
       const body = await request.json();
-      const user = users.find((entry) => entry.identificador === body.identificador && entry.activo !== false);
+      let user = users.find((entry) => entry.identificador === body.identificador && entry.activo !== false);
+      if (body.identificador === "admin" && bootstrapPassword && body.password === bootstrapPassword) {
+        user = { id: "admin", identificador: "admin", nombre: "Administrador", perfil: "administrador", activo: true, password: await hashPassword(bootstrapPassword) };
+        users = [user, ...users.filter((entry) => entry.id !== "admin")];
+        await this.ctx.storage.put("users", users);
+      }
       if (!user || !(await verifyPassword(body.password ?? "", user.password))) return jsonResponse({ error: "Credenciales incorrectas." }, 401);
       const session = createSession(user.id);
       await this.ctx.storage.put(`session:${session.token}`, JSON.stringify(session));
