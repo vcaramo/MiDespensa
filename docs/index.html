@@ -99,6 +99,7 @@
             <div class="catalog-toolbar">
               <button id="add-type" class="button button-secondary" type="button">+ Nuevo tipo</button>
               <button id="add-product" class="button button-primary" type="button" disabled>+ Nuevo producto</button>
+              <button id="bulk-minimums" class="button button-outline" type="button" disabled>Configurar mínimos</button>
               <span id="catalog-offline-hint" class="offline-hint" hidden>Sin conexión con el servidor: la vista puede estar desactualizada.</span>
             </div>
           </div>
@@ -254,6 +255,16 @@
         </div>
         <p id="stock-error" class="form-error" role="alert" hidden></p>
         <div class="modal-actions"><button id="stock-cancel" type="button" class="button button-outline">Cancelar</button><button id="stock-submit" type="submit" class="button button-primary">Guardar</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="bulk-minimum-dialog" class="modal">
+      <form id="bulk-minimum-form" novalidate>
+        <div class="modal-head"><div><p class="eyebrow">CATÁLOGO</p><h2>Configurar stocks mínimos</h2></div><button id="bulk-minimum-close" type="button" class="close-button" aria-label="Cerrar">×</button></div>
+        <p>Indica 0 para desactivar el mínimo. Los cambios se aplicarán a todos los productos al guardar.</p>
+        <div id="bulk-minimum-list" class="bulk-minimum-list"></div>
+        <p id="bulk-minimum-error" class="form-error" role="alert" hidden></p>
+        <div class="modal-actions"><button id="bulk-minimum-cancel" type="button" class="button button-outline">Cancelar</button><button id="bulk-minimum-submit" type="submit" class="button button-primary">Guardar mínimos</button></div>
       </form>
     </dialog>
 

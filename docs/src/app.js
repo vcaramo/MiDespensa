@@ -80,6 +80,12 @@ const ui = {
   productList: $("product-list"),
   addType: $("add-type"),
   addProduct: $("add-product"),
+  bulkMinimums: $("bulk-minimums"),
+  bulkMinimumDialog: $("bulk-minimum-dialog"),
+  bulkMinimumForm: $("bulk-minimum-form"),
+  bulkMinimumList: $("bulk-minimum-list"),
+  bulkMinimumError: $("bulk-minimum-error"),
+  bulkMinimumSubmit: $("bulk-minimum-submit"),
   catalogOfflineHint: $("catalog-offline-hint"),
   shoppingOfflineHint: $("shopping-offline-hint"),
   inventoryOfflineHint: $("inventory-offline-hint"),
@@ -333,6 +339,7 @@ function renderCatalog() {
   ui.productCount.textContent = String(state.productos.length);
   ui.addType.disabled = !connected;
   ui.addProduct.disabled = !connected || state.tipos.length === 0;
+  ui.bulkMinimums.disabled = !connected || state.productos.length === 0;
   renderTypes();
   renderProducts();
 }
@@ -852,6 +859,43 @@ function openEditor(mode, id = null) {
   (mode === "container-move" ? ui.editRoom : ui.editName).focus();
 }
 
+function openBulkMinimums() {
+  if (!connected || !state.productos.length) return;
+  ui.bulkMinimumError.hidden = true;
+  ui.bulkMinimumList.replaceChildren();
+  for (const product of [...state.productos].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))) {
+    const row = document.createElement("label");
+    row.className = "bulk-minimum-row";
+    const name = document.createElement("span");
+    name.textContent = product.nombre;
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = "0";
+    input.step = "1";
+    input.value = String(product.stockMinimo ?? 0);
+    input.dataset.productId = product.id;
+    row.append(name, input);
+    ui.bulkMinimumList.append(row);
+  }
+  ui.bulkMinimumDialog.showModal();
+}
+
+async function submitBulkMinimums(event) {
+  event.preventDefault();
+  ui.bulkMinimumError.hidden = true;
+  ui.bulkMinimumSubmit.disabled = true;
+  try {
+    const values = new Map([...ui.bulkMinimumList.querySelectorAll("input[data-product-id]")].map((input) => [input.dataset.productId, Number(input.value)]));
+    if ([...values.values()].some((value) => !Number.isSafeInteger(value) || value < 0)) throw new Error("Todos los mínimos deben ser números enteros iguales o mayores que cero.");
+    await saveChange((current) => ({ ...current, productos: current.productos.map((product) => ({ ...product, stockMinimo: values.get(product.id) })) }), "Stocks mínimos actualizados.");
+    ui.bulkMinimumDialog.close();
+  } catch (error) {
+    showError(error, ui.bulkMinimumError);
+  } finally {
+    ui.bulkMinimumSubmit.disabled = false;
+  }
+}
+
 async function submitEditor(event) {
   event.preventDefault();
   if (!editMode) return;
@@ -1096,6 +1140,10 @@ function setupEvents() {
   });
   ui.addType.addEventListener("click", () => openEditor("type-create"));
   ui.addProduct.addEventListener("click", () => openEditor("product-create"));
+  ui.bulkMinimums.addEventListener("click", openBulkMinimums);
+  ui.bulkMinimumForm.addEventListener("submit", submitBulkMinimums);
+  $("bulk-minimum-close").addEventListener("click", () => ui.bulkMinimumDialog.close());
+  $("bulk-minimum-cancel").addEventListener("click", () => ui.bulkMinimumDialog.close());
   ui.renameType.addEventListener("click", () => openEditor("type-rename", selectedTypeId));
   ui.deleteType.addEventListener("click", removeType);
   ui.addStock.addEventListener("click", () => openStockDialog("add"));
