@@ -23,7 +23,7 @@ import {
   updateProducto,
   applyMinimumRestock,
 } from "./domain.js";
-import { AuthenticationError, checkServer, commitState, createUser, hasPassword, listBackups, listHistory, listUsers, loadBackup, loadState, login, RevisionConflictError, setPassword, updateUser } from "./storage.js";
+import { AuthenticationError, checkServer, commitState, createUser, hasPassword, listBackups, listHistory, listUsers, loadBackup, loadState, login, lookupProduct, RevisionConflictError, setPassword, updateUser } from "./storage.js";
 
 const $ = (id) => document.getElementById(id);
 const ui = {
@@ -1136,6 +1136,10 @@ async function openBarcodeScanner(target = ui.stockBarcode) {
         if (value) {
           barcodeTarget.value = value;
           if (barcodeTarget === ui.stockBarcode) selectProductByBarcode(value);
+          if (barcodeTarget === ui.editBarcode) {
+            ui.barcodeStatus.textContent = "Buscando datos del producto…";
+            await fillProductFromDatabase(value);
+          }
           ui.barcodeDialog.close();
           return;
         }
@@ -1147,6 +1151,26 @@ async function openBarcodeScanner(target = ui.stockBarcode) {
     barcodeTarget = null;
     stopBarcodeScanner();
     showError(new Error(error?.name === "NotAllowedError" ? "El navegador no ha concedido permiso para usar la cámara." : "No se pudo abrir la cámara."));
+  }
+}
+
+async function fillProductFromDatabase(code) {
+  try {
+    const result = await lookupProduct(code);
+    if (!result.found) {
+      ui.editSimilar.textContent = "No se encontró el producto en Open Food Facts. Puedes completar los datos manualmente.";
+      ui.editSimilar.hidden = false;
+      return;
+    }
+    if (result.name) ui.editName.value = result.name;
+    const category = result.categories?.split(",")[0]?.trim();
+    const details = [result.brand, result.quantity, category].filter(Boolean).join(" · ");
+    ui.editSimilar.textContent = details ? `Datos encontrados: ${details}. Revisa la categoría antes de guardar.` : "Datos encontrados. Revisa la categoría antes de guardar.";
+    ui.editSimilar.hidden = false;
+    showToast("Datos del producto encontrados.");
+  } catch {
+    ui.editSimilar.textContent = "No se pudo consultar la base externa. Puedes completar los datos manualmente.";
+    ui.editSimilar.hidden = false;
   }
 }
 
@@ -1447,6 +1471,7 @@ function setupEvents() {
   ui.stockBarcode.addEventListener("input", () => selectProductByBarcode(ui.stockBarcode.value));
   ui.scanBarcode.addEventListener("click", () => openBarcodeScanner(ui.stockBarcode));
   ui.scanCatalogBarcode.addEventListener("click", () => openBarcodeScanner(ui.editBarcode));
+  ui.editBarcode.addEventListener("change", () => { if (ui.editBarcode.value.trim()) fillProductFromDatabase(ui.editBarcode.value.trim()); });
   $("barcode-close").addEventListener("click", () => ui.barcodeDialog.close());
   $("barcode-cancel").addEventListener("click", () => ui.barcodeDialog.close());
   ui.barcodeDialog.addEventListener("close", () => { stopBarcodeScanner(); barcodeTarget = null; });

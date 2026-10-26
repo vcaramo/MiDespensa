@@ -25,8 +25,37 @@ export async function handleApi(request, env) {
   if (url.pathname === "/api/health" && request.method === "GET") {
     return new Response("despensa-ok", { headers: { "Cache-Control": "no-store, private" } });
   }
+  if (url.pathname.startsWith("/api/product/") && request.method === "GET") {
+    const code = decodeURIComponent(url.pathname.slice("/api/product/".length));
+    if (!/^\d{8,14}$/.test(code)) return jsonResponse({ error: "Código de barras no válido." }, 400);
+    const fields = "code,product_name,product_name_es,brands,categories,categories_tags,quantity,image_url,product_type";
+    let response;
+    try {
+      response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}?product_type=all&fields=${fields}`, {
+        headers: { "User-Agent": "MiDespensa/1.0 (personal pantry app)" },
+      });
+    } catch {
+      return jsonResponse({ found: false, unavailable: true }, 200);
+    }
+    if (!response.ok) return jsonResponse({ found: false }, 200);
+    const data = await response.json();
+    if (data.status !== 1 || !data.product) return jsonResponse({ found: false }, 200);
+    const product = data.product;
+    return jsonResponse({
+      found: true,
+      code,
+      name: product.product_name_es || product.product_name || "",
+      brand: product.brands || "",
+      categories: product.categories || "",
+      categoryTags: Array.isArray(product.categories_tags) ? product.categories_tags : [],
+      quantity: product.quantity || "",
+      imageUrl: product.image_url || "",
+      productType: product.product_type || "food",
+    });
+  }
   const usersRoute = url.pathname === "/api/users" || /^\/api\/users\/[^/]+$/.test(url.pathname);
-  if ((!usersRoute && url.pathname !== "/api/state" && url.pathname !== "/api/backups" && !url.pathname.startsWith("/api/backups/") && url.pathname !== "/api/history") || !["GET", "PUT", "POST"].includes(request.method)) {
+  const productRoute = url.pathname.startsWith("/api/product/");
+  if ((!usersRoute && !productRoute && url.pathname !== "/api/state" && url.pathname !== "/api/backups" && !url.pathname.startsWith("/api/backups/") && url.pathname !== "/api/history") || !["GET", "PUT", "POST"].includes(request.method)) {
     return jsonResponse({ error: "Ruta no encontrada." }, 404);
   }
   const id = env.DESPENSA_STATE.idFromName("hogar-principal");

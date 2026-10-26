@@ -113,6 +113,12 @@ export async function updateUser(id, input) {
   }));
 }
 
+export async function lookupProduct(code) {
+  const response = await apiFetch(new URL(`../api/product/${encodeURIComponent(code)}`, import.meta.url));
+  if (!response.ok) throw new Error("No se pudo consultar la base de productos.");
+  return response.json();
+}
+
 export async function commitState(expectedRevision, transform) {
   const current = await loadState();
   if (current.revision !== expectedRevision) throw new RevisionConflictError();
