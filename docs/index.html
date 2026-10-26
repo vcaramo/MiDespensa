@@ -144,12 +144,14 @@
             <span><strong id="stock-total">0</strong> unidades</span>
             <span><strong id="stock-products">0</strong> productos con existencias</span>
           </div>
-          <section id="low-stock-panel" class="panel low-stock-panel" aria-labelledby="low-stock-heading" hidden>
+          <details id="low-stock-panel" class="panel low-stock-panel" aria-labelledby="low-stock-heading" hidden>
             <div class="panel-heading"><div><p class="panel-kicker">ATENCIÓN</p><h2 id="low-stock-heading">Productos bajo mínimos</h2></div><button id="go-shopping-from-low" class="button button-outline" type="button">Ver lista de la compra</button></div>
+            <summary>Productos bajo mínimos <button id="go-shopping-from-low-summary" class="button button-outline" type="button">Ver lista de la compra</button></summary>
             <div id="low-stock-list" class="stock-list"></div>
           </section>
-          <section id="history-panel" class="panel history-panel" aria-labelledby="history-heading" hidden>
+          <details id="history-panel" class="panel history-panel" aria-labelledby="history-heading" hidden>
             <div class="panel-heading"><div><p class="panel-kicker">ACTIVIDAD</p><h2 id="history-heading">Cambios recientes</h2></div></div>
+            <summary>Cambios recientes</summary>
             <div id="history-list" class="history-list"></div>
           </section>
           <div class="inventory-layout">

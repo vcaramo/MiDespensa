@@ -97,6 +97,7 @@ const ui = {
   lowStockPanel: $("low-stock-panel"),
   lowStockList: $("low-stock-list"),
   goShoppingFromLow: $("go-shopping-from-low"),
+  goShoppingFromLowSummary: $("go-shopping-from-low-summary"),
   historyPanel: $("history-panel"),
   historyList: $("history-list"),
   shoppingList: $("shopping-list"),
@@ -1148,6 +1149,7 @@ function setupNavigation() {
 function setupEvents() {
   ui.loginForm.addEventListener("submit", submitLogin);
   ui.goShoppingFromLow.addEventListener("click", () => document.querySelector('[data-view="compra"]').click());
+  ui.goShoppingFromLowSummary.addEventListener("click", (event) => { event.preventDefault(); document.querySelector('[data-view="compra"]').click(); });
   ui.downloadAutoBackup.addEventListener("click", downloadAutoBackup);
   ui.loginDialog.addEventListener("cancel", (event) => event.preventDefault());
   setupNavigation();
@@ -1207,6 +1209,7 @@ function setupEvents() {
 
 async function start() {
   setupEvents();
+  ui.historyPanel.parentElement.append(ui.historyPanel);
   showLogin();
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
     navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(() => {});
