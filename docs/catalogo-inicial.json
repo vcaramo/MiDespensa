@@ -22,8 +22,20 @@
       "nombre": "Frutas y verduras"
     },
     {
-      "id": "tipo-frescos",
-      "nombre": "Carnes, pescados y frescos"
+      "id": "tipo-carnes",
+      "nombre": "Carnes y aves"
+    },
+    {
+      "id": "tipo-pescados",
+      "nombre": "Pescados y mariscos"
+    },
+    {
+      "id": "tipo-charcuteria",
+      "nombre": "Charcutería"
+    },
+    {
+      "id": "tipo-precocinados",
+      "nombre": "Precocinados"
     },
     {
       "id": "tipo-congelados",
@@ -323,43 +335,68 @@
     },
     {
       "id": "producto-055",
-      "tipoId": "tipo-frescos",
+      "tipoId": "tipo-carnes",
       "nombre": "Pollo fresco"
     },
     {
       "id": "producto-056",
-      "tipoId": "tipo-frescos",
+      "tipoId": "tipo-carnes",
       "nombre": "Carne picada de ternera"
     },
     {
       "id": "producto-057",
-      "tipoId": "tipo-frescos",
+      "tipoId": "tipo-charcuteria",
       "nombre": "Jamón cocido"
     },
     {
       "id": "producto-058",
-      "tipoId": "tipo-frescos",
+      "tipoId": "tipo-charcuteria",
       "nombre": "Jamón serrano"
     },
     {
       "id": "producto-059",
-      "tipoId": "tipo-frescos",
+      "tipoId": "tipo-charcuteria",
       "nombre": "Salchichas frescas"
     },
     {
       "id": "producto-060",
-      "tipoId": "tipo-frescos",
+      "tipoId": "tipo-pescados",
       "nombre": "Filetes de merluza frescos"
     },
     {
       "id": "producto-061",
-      "tipoId": "tipo-frescos",
+      "tipoId": "tipo-pescados",
       "nombre": "Salmón fresco"
     },
     {
       "id": "producto-062",
-      "tipoId": "tipo-frescos",
+      "tipoId": "tipo-lacteos",
       "nombre": "Tofu"
+    },
+    {
+      "id": "producto-101",
+      "tipoId": "tipo-precocinados",
+      "nombre": "Tortilla de patatas preparada"
+    },
+    {
+      "id": "producto-102",
+      "tipoId": "tipo-precocinados",
+      "nombre": "Pizza refrigerada"
+    },
+    {
+      "id": "producto-103",
+      "tipoId": "tipo-precocinados",
+      "nombre": "Lasaña preparada"
+    },
+    {
+      "id": "producto-104",
+      "tipoId": "tipo-precocinados",
+      "nombre": "Canelones preparados"
+    },
+    {
+      "id": "producto-105",
+      "tipoId": "tipo-precocinados",
+      "nombre": "Croquetas preparadas"
     },
     {
       "id": "producto-063",
@@ -378,12 +415,12 @@
     },
     {
       "id": "producto-066",
-      "tipoId": "tipo-congelados",
+      "tipoId": "tipo-precocinados",
       "nombre": "Pizza congelada"
     },
     {
       "id": "producto-067",
-      "tipoId": "tipo-congelados",
+      "tipoId": "tipo-precocinados",
       "nombre": "Croquetas congeladas"
     },
     {

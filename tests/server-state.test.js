@@ -7,7 +7,7 @@ const starter = JSON.parse(await readFile(new URL("../docs/catalogo-inicial.json
 
 test("el servidor inicializa el catálogo y controla las revisiones", () => {
   const original = initialState(starter);
-  assert.equal(original.productos.length, 100);
+  assert.equal(original.productos.length, 105);
   assert.equal(original.revision, 0);
 
   const proposed = { ...original, estancias: [{ id: "estancia-prueba", nombre: "Cocina" }] };
