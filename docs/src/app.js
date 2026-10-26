@@ -61,6 +61,7 @@ const ui = {
   editMinimum: $("edit-minimum"),
   barcodeField: $("barcode-field"),
   editBarcode: $("edit-barcode"),
+  scanCatalogBarcode: $("scan-catalog-barcode"),
   minimumField: $("minimum-field"),
   editKicker: $("edit-kicker"),
   editError: $("edit-error"),
@@ -179,6 +180,7 @@ let roomPanelExpanded = true;
 let containerPanelExpanded = true;
 let barcodeStream = null;
 let barcodeFrame = null;
+let barcodeTarget = null;
 
 function showToast(message, isError = false) {
   clearTimeout(toastTimeout);
@@ -1109,7 +1111,7 @@ function selectProductByBarcode(value) {
   ui.stockError.hidden = Boolean(product || !code);
 }
 
-async function openBarcodeScanner() {
+async function openBarcodeScanner(target = ui.stockBarcode) {
   if (!window.BarcodeDetector) {
     showError(new Error("Este navegador no permite escanear códigos desde la cámara. Escribe el código manualmente o usa un lector USB."));
     return;
@@ -1119,6 +1121,7 @@ async function openBarcodeScanner() {
     return;
   }
   try {
+    barcodeTarget = target;
     barcodeStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
     ui.barcodeVideo.srcObject = barcodeStream;
     await ui.barcodeVideo.play();
@@ -1131,8 +1134,8 @@ async function openBarcodeScanner() {
         const codes = await detector.detect(ui.barcodeVideo);
         const value = codes[0]?.rawValue;
         if (value) {
-          ui.stockBarcode.value = value;
-          selectProductByBarcode(value);
+          barcodeTarget.value = value;
+          if (barcodeTarget === ui.stockBarcode) selectProductByBarcode(value);
           ui.barcodeDialog.close();
           return;
         }
@@ -1141,6 +1144,7 @@ async function openBarcodeScanner() {
     };
     barcodeFrame = requestAnimationFrame(scan);
   } catch (error) {
+    barcodeTarget = null;
     stopBarcodeScanner();
     showError(new Error(error?.name === "NotAllowedError" ? "El navegador no ha concedido permiso para usar la cámara." : "No se pudo abrir la cámara."));
   }
@@ -1441,10 +1445,11 @@ function setupEvents() {
   ui.addStock.addEventListener("click", () => openStockDialog("add"));
   ui.stockForm.addEventListener("submit", submitStock);
   ui.stockBarcode.addEventListener("input", () => selectProductByBarcode(ui.stockBarcode.value));
-  ui.scanBarcode.addEventListener("click", openBarcodeScanner);
+  ui.scanBarcode.addEventListener("click", () => openBarcodeScanner(ui.stockBarcode));
+  ui.scanCatalogBarcode.addEventListener("click", () => openBarcodeScanner(ui.editBarcode));
   $("barcode-close").addEventListener("click", () => ui.barcodeDialog.close());
   $("barcode-cancel").addEventListener("click", () => ui.barcodeDialog.close());
-  ui.barcodeDialog.addEventListener("close", stopBarcodeScanner);
+  ui.barcodeDialog.addEventListener("close", () => { stopBarcodeScanner(); barcodeTarget = null; });
   ui.stockQuantity.addEventListener("input", updateRestockOffer);
   ui.stockRestock.addEventListener("change", updateRestockOffer);
   $("stock-close").addEventListener("click", () => ui.stockDialog.close());
