@@ -171,16 +171,22 @@ export function deleteTipo(state, id) {
   return { ...state, tipos: state.tipos.filter((entry) => entry.id !== id) };
 }
 
-export function createProducto(state, { id, tipoId, nombre }) {
+function requireMinimum(value = 0) {
+  if (!Number.isSafeInteger(value) || value < 0) throw new DomainError("El stock mínimo debe ser un número entero igual o mayor que cero.");
+  return value;
+}
+
+export function createProducto(state, { id, tipoId, nombre, stockMinimo = 0 }) {
   requireId(id);
   findById(state.tipos, tipoId, "El tipo");
   if (state.productos.some((entry) => entry.id === id)) throw new DomainError("El identificador ya existe.");
   const name = cleanName(nombre);
   ensureUniqueName(state.productos, name, null, "un producto");
-  return { ...state, productos: [...state.productos, { id, tipoId, nombre: name }] };
+  const minimum = requireMinimum(stockMinimo);
+  return { ...state, productos: [...state.productos, { id, tipoId, nombre: name, ...(minimum > 0 ? { stockMinimo: minimum } : {}) }] };
 }
 
-export function updateProducto(state, id, { tipoId, nombre }) {
+export function updateProducto(state, id, { tipoId, nombre, stockMinimo = 0 }) {
   findById(state.productos, id, "El producto");
   findById(state.tipos, tipoId, "El tipo");
   const name = cleanName(nombre);
@@ -188,9 +194,21 @@ export function updateProducto(state, id, { tipoId, nombre }) {
   return {
     ...state,
     productos: state.productos.map((entry) =>
-      entry.id === id ? { ...entry, tipoId, nombre: name } : entry,
+      entry.id === id ? (() => { const minimum = requireMinimum(stockMinimo); const updated = { ...entry, tipoId, nombre: name }; if (minimum > 0) updated.stockMinimo = minimum; else delete updated.stockMinimo; return updated; })() : entry,
     ),
   };
+}
+
+export function applyMinimumRestock(state, productoId, id = crypto.randomUUID()) {
+  const product = findById(state.productos, productoId, "El producto");
+  const minimum = requireMinimum(product.stockMinimo ?? 0);
+  if (minimum === 0) return state;
+  const total = state.existencias.filter((entry) => entry.productoId === productoId).reduce((sum, entry) => sum + entry.cantidad, 0);
+  const needed = minimum - total;
+  if (needed <= 0) return state;
+  const existing = state.compras.find((entry) => entry.productoId === productoId);
+  if (existing) return { ...state, compras: state.compras.map((entry) => entry.id === existing.id ? { ...entry, cantidad: Math.max(entry.cantidad, needed) } : entry) };
+  return { ...state, compras: [...state.compras, { id, productoId, cantidad: needed }] };
 }
 
 export function deleteProducto(state, id) {
@@ -331,11 +349,12 @@ export function validateState(input) {
       nombre: cleanName(entry.nombre),
     })),
     tipos: readCollection(input, "tipos", (entry) => ({ id: requireId(entry.id), nombre: cleanName(entry.nombre) })),
-    productos: readCollection(input, "productos", (entry) => ({
-      id: requireId(entry.id),
-      tipoId: requireId(entry.tipoId),
-      nombre: cleanName(entry.nombre),
-    })),
+    productos: readCollection(input, "productos", (entry) => {
+      const product = { id: requireId(entry.id), tipoId: requireId(entry.tipoId), nombre: cleanName(entry.nombre) };
+      const minimum = entry.stockMinimo === undefined ? 0 : requireMinimum(entry.stockMinimo);
+      if (minimum > 0) product.stockMinimo = minimum;
+      return product;
+    }),
     existencias: readCollection(input, "existencias", (entry) => ({
       id: requireId(entry.id),
       contenedorId: entry.contenedorId === null ? null : requireId(entry.contenedorId),
@@ -367,6 +386,7 @@ export function validateState(input) {
   }
   for (const entry of state.productos) {
     if (!typeIds.has(entry.tipoId)) throw new DomainError("Un producto referencia un tipo inexistente.");
+    requireMinimum(entry.stockMinimo);
   }
   const pairs = new Set();
   for (const entry of state.existencias) {

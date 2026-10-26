@@ -21,6 +21,7 @@ import {
   renameTipo,
   removeShoppingItem,
   updateProducto,
+  applyMinimumRestock,
 } from "./domain.js";
 import { AuthenticationError, checkServer, commitState, hasPassword, listBackups, loadBackup, loadState, RevisionConflictError, setPassword } from "./storage.js";
 
@@ -54,6 +55,8 @@ const ui = {
   roomField: $("room-field"),
   typeField: $("type-field"),
   editType: $("edit-type"),
+  editMinimum: $("edit-minimum"),
+  minimumField: $("minimum-field"),
   editKicker: $("edit-kicker"),
   editError: $("edit-error"),
   editSimilar: $("edit-similar"),
@@ -308,13 +311,16 @@ function renderProducts() {
     const type = document.createElement("span");
     type.className = "product-type";
     type.textContent = state.tipos.find((entry) => entry.id === product.tipoId)?.nombre ?? "Tipo desconocido";
+    const minimum = document.createElement("span");
+    minimum.className = "product-type";
+    minimum.textContent = product.stockMinimo > 0 ? `Mínimo: ${product.stockMinimo}` : "Sin stock mínimo";
     const actions = document.createElement("div");
     actions.className = "container-actions";
     actions.append(
       makeButton("Editar", "text-button", () => openEditor("product-edit", product.id), !connected),
       makeButton("Eliminar", "text-button text-button-danger", () => removeProduct(product.id), !connected),
     );
-    card.append(name, type, actions);
+    card.append(name, type, minimum, actions);
     ui.productList.append(card);
   }
 }
@@ -665,7 +671,7 @@ async function submitStock(event) {
     if (mode === "add") {
       await saveChange((current) => addStock(current, { id: newId, productoId, contenedorId, cantidad }), "Existencias añadidas.");
     } else if (mode === "remove") {
-      await saveChange((current) => consumeStock(current, { productoId, contenedorId, cantidad, shoppingId, shoppingQuantity }), shoppingQuantity === null ? "Unidades retiradas." : "Unidades retiradas y producto añadido a la lista de la compra.");
+      await saveChange((current) => applyMinimumRestock(consumeStock(current, { productoId, contenedorId, cantidad, shoppingId, shoppingQuantity }), productoId, shoppingId), shoppingQuantity === null ? "Unidades retiradas." : "Unidades retiradas y producto añadido a la lista de la compra.");
     } else if (mode === "move") {
       await saveChange((current) => moveStock(current, { id: newId, productoId, fromContainerId: contenedorId, toContainerId: targetId, cantidad }), "Unidades trasladadas.");
     } else if (mode === "purchase") {
@@ -771,6 +777,8 @@ function openEditor(mode, id = null) {
   ui.nameField.hidden = mode === "container-move";
   ui.roomField.hidden = !["container-create", "container-move"].includes(mode);
   ui.typeField.hidden = !["product-create", "product-edit"].includes(mode);
+  ui.minimumField.hidden = !["product-create", "product-edit"].includes(mode);
+  ui.editMinimum.value = "0";
   ui.editKicker.textContent = mode.startsWith("type-") || mode.startsWith("product-") ? "CATÁLOGO" : "UBICACIONES";
   const titles = {
     "room-create": "Nueva estancia",
@@ -792,6 +800,7 @@ function openEditor(mode, id = null) {
   if (mode === "product-edit") {
     const product = state.productos.find((entry) => entry.id === id);
     ui.editName.value = product?.nombre ?? "";
+    ui.editMinimum.value = String(product?.stockMinimo ?? 0);
     populateTypeSelect(product?.tipoId);
   }
   if (mode === "container-create") populateRoomSelect(selectedRoomId);
@@ -813,6 +822,7 @@ async function submitEditor(event) {
   const name = ui.editName.value;
   const roomId = ui.editRoom.value;
   const typeId = ui.editType.value;
+  const stockMinimo = Number(ui.editMinimum.value);
   try {
     if (mode === "room-create") {
       const newId = crypto.randomUUID();
@@ -837,10 +847,10 @@ async function submitEditor(event) {
       await saveChange((current) => renameTipo(current, id, name), "Tipo renombrado.");
     } else if (mode === "product-create") {
       const newId = crypto.randomUUID();
-      await saveChange((current) => createProducto(current, { id: newId, tipoId: typeId, nombre: name }), "Producto creado.");
+      await saveChange((current) => createProducto(current, { id: newId, tipoId: typeId, nombre: name, stockMinimo }), "Producto creado.");
       selectedTypeId = typeId;
     } else if (mode === "product-edit") {
-      await saveChange((current) => updateProducto(current, id, { tipoId: typeId, nombre: name }), "Producto actualizado.");
+      await saveChange((current) => updateProducto(current, id, { tipoId: typeId, nombre: name, stockMinimo }), "Producto actualizado.");
       selectedTypeId = typeId;
     }
     ui.editDialog.close();

@@ -224,6 +224,11 @@
           <span>Tipo de producto</span>
           <select id="edit-type" name="tipo"></select>
         </label>
+        <label id="minimum-field" class="field" hidden>
+          <span>Stock mínimo</span>
+          <input id="edit-minimum" name="stockMinimo" type="number" min="0" step="1" value="0" />
+          <small>Se añadirá a la lista de la compra cuando queden menos unidades.</small>
+        </label>
         <p id="edit-error" class="form-error" role="alert" hidden></p>
         <div class="modal-actions">
           <button id="edit-cancel" type="button" class="button button-outline">Cancelar</button>
