@@ -43,7 +43,8 @@ export default {
       if (!env.APP_PASSWORD || env.APP_PASSWORD.length < 16) {
         return jsonResponse({ error: "El acceso todavía no está configurado en Cloudflare." }, 503);
       }
-      if (!(await authorized(request, env))) {
+      const hasCookie = Boolean(request.headers.get("Cookie")?.includes("despensa_session="));
+      if (!hasCookie && !(await authorized(request, env))) {
         return jsonResponse({ error: "Contraseña incorrecta." }, 401);
       }
     }
@@ -127,6 +128,11 @@ export class DespensaState extends DurableObject {
       const seed = stored === undefined ? await this.starter(request) : null;
       const url = new URL(request.url);
       if (url.pathname.startsWith("/api/auth/")) return this.auth(request);
+      if (!request.headers.get("X-Despensa-Password")) {
+        const token = sessionToken(request);
+        const session = token ? await this.ctx.storage.get(`session:${token}`) : null;
+        if (!session || session.expiresAt <= Date.now()) return jsonResponse({ error: "Sesión no válida." }, 401);
+      }
       if (url.pathname === "/api/backups") {
         if (request.method !== "GET") return jsonResponse({ error: "Método no permitido." }, 405);
         const backups = [...(await this.ctx.storage.list({ prefix: "backup:" })).entries()]
