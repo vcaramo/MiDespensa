@@ -613,7 +613,8 @@ async function refreshHistory() {
       const row = document.createElement("div");
       row.className = "history-row";
       const date = new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeStyle: "short" }).format(new Date(entry.at));
-      row.textContent = `${date} · revisión ${entry.revision} · ${entry.changed.map((key) => ({ existencias: "inventario", compras: "lista de compra", productos: "catálogo", tipos: "tipos", estancias: "estancias", contenedores: "contenedores" }[key] ?? key)).join(", ")}`;
+      const summary = entry.details?.join(" · ") ?? entry.changed.join(", ");
+      row.textContent = `${date} · revisión ${entry.revision} · ${summary}`;
       ui.historyList.append(row);
     }
   } catch {

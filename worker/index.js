@@ -50,8 +50,23 @@ export class DespensaState extends DurableObject {
     const changed = ["estancias", "contenedores", "tipos", "productos", "existencias", "compras"]
       .filter((key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]));
     if (!changed.length) return;
+    const productName = (id, source) => source.productos.find((entry) => entry.id === id)?.nombre ?? "producto desconocido";
+    const details = [];
+    const stock = new Map([...before.existencias, ...after.existencias].map((entry) => [`${entry.productoId}|${entry.contenedorId}`, entry]));
+    for (const key of stock.keys()) {
+      const [productoId, contenedorId] = key.split("|");
+      const previous = before.existencias.find((entry) => `${entry.productoId}|${entry.contenedorId}` === key)?.cantidad ?? 0;
+      const current = after.existencias.find((entry) => `${entry.productoId}|${entry.contenedorId}` === key)?.cantidad ?? 0;
+      if (current !== previous) details.push(`${current > previous ? "Añadidas" : "Retiradas"} ${Math.abs(current - previous)} ${Math.abs(current - previous) === 1 ? "unidad" : "unidades"} de ${productName(productoId, after)}${contenedorId === "null" ? " (sin contenedor)" : ""}`);
+    }
+    for (const product of after.productos.filter((entry) => !before.productos.some((old) => old.id === entry.id))) details.push(`Creado producto: ${product.nombre}`);
+    for (const item of after.compras) {
+      const previous = before.compras.find((entry) => entry.productoId === item.productoId)?.cantidad ?? 0;
+      if (item.cantidad !== previous) details.push(`${previous ? "Actualizada" : "Añadida"} compra de ${productName(item.productoId, after)}: ${item.cantidad} unidades`);
+    }
+    if (!details.length) details.push(...changed.map((key) => `Actualizado: ${key}`));
     const key = `history:${Date.now()}:${after.revision}`;
-    await this.ctx.storage.put(key, JSON.stringify({ at: after.updatedAt, revision: after.revision, changed }));
+    await this.ctx.storage.put(key, JSON.stringify({ at: after.updatedAt, revision: after.revision, changed, details }));
     const entries = [...(await this.ctx.storage.list({ prefix: "history:" })).keys()].sort().reverse();
     if (entries.length > 100) await this.ctx.storage.delete(entries.slice(100));
   }
