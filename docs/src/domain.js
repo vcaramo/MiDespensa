@@ -367,6 +367,11 @@ export function validateState(input) {
       cantidad: entry.cantidad,
     })),
   };
+  if (input.rutasCompra !== undefined) {
+    if (!Array.isArray(input.rutasCompra)) throw new DomainError("Las tiendas no son válidas.");
+    state.rutasCompra = input.rutasCompra.map((route) => ({ id: requireId(route.id), nombre: cleanName(route.nombre), ordenTipoIds: Array.isArray(route.ordenTipoIds) ? route.ordenTipoIds.map(requireId) : [] }));
+    ensureUniqueNames(state.rutasCompra, "tiendas");
+  }
 
   const allIds = new Set();
   for (const key of ["estancias", "contenedores", "tipos", "productos", "existencias", "compras"]) {

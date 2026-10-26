@@ -110,6 +110,8 @@ const ui = {
   historyPanel: $("history-panel"),
   historyList: $("history-list"),
   shoppingList: $("shopping-list"),
+  shoppingStore: $("shopping-store"),
+  addShoppingStore: $("add-shopping-store"),
   shoppingForm: $("shopping-form"),
   shoppingName: $("shopping-name"),
   shoppingSuggestions: $("shopping-suggestions"),
@@ -140,6 +142,7 @@ const ui = {
 };
 
 let state;
+let activeShoppingStore = "general";
 let automaticBackups = [];
 let selectedRoomId = null;
 let selectedTypeId = null;
@@ -411,6 +414,10 @@ function updateShoppingSuggestions() {
 }
 
 function renderInventory() {
+  if (!state.rutasCompra?.length) state.rutasCompra = [{ id: "general", nombre: "Tienda general", ordenTipoIds: state.tipos.map((type) => type.id) }];
+  const route = state.rutasCompra.find((entry) => entry.id === activeShoppingStore) ?? state.rutasCompra[0];
+  activeShoppingStore = route.id;
+  ui.shoppingStore.replaceChildren(...state.rutasCompra.map((entry) => { const option = document.createElement("option"); option.value = entry.id; option.textContent = entry.nombre; option.selected = entry.id === activeShoppingStore; return option; }));
   ui.stockTotal.textContent = String(state.existencias.reduce((total, entry) => total + entry.cantidad, 0));
   ui.stockProducts.textContent = String(new Set(state.existencias.map((entry) => entry.productoId)).size);
   ui.shoppingTotal.textContent = String(state.compras.reduce((total, entry) => total + entry.cantidad, 0));
@@ -494,7 +501,7 @@ function renderInventory() {
   if (!state.compras.length) {
     ui.shoppingList.append(makeEmptyState("☑", "Lista vacía", "Busca un producto del catálogo o crea uno nuevo aquí."));
   } else {
-    const typeOrder = new Map(state.tipos.map((type, index) => [type.id, index]));
+    const typeOrder = new Map((route.ordenTipoIds.length ? route.ordenTipoIds : state.tipos.map((type) => type.id)).map((id, index) => [id, index]));
     for (const item of [...state.compras].sort((a, b) => {
       const typeA = state.productos.find((product) => product.id === a.productoId)?.tipoId;
       const typeB = state.productos.find((product) => product.id === b.productoId)?.tipoId;
@@ -730,7 +737,7 @@ async function refreshState() {
 async function saveChange(transform, success) {
   await requireConnection();
   try {
-    state = await commitState(state.revision, transform);
+    state = await commitState(state.revision, (current) => transform(current.rutasCompra?.length ? current : { ...current, rutasCompra: [{ id: "general", nombre: "Tienda general", ordenTipoIds: current.tipos.map((type) => type.id) }] }));
     render();
     refreshHistory();
     showToast(success);
@@ -1038,12 +1045,14 @@ async function submitEditor(event) {
 async function moveSelectedType(direction) {
   if (!selectedTypeId) return;
   await saveChange((current) => {
-    const index = current.tipos.findIndex((type) => type.id === selectedTypeId);
+    const routes = current.rutasCompra ?? [{ id: "general", nombre: "Tienda general", ordenTipoIds: current.tipos.map((type) => type.id) }];
+    const route = routes.find((entry) => entry.id === activeShoppingStore) ?? routes[0];
+    const order = route.ordenTipoIds.length ? [...route.ordenTipoIds] : current.tipos.map((type) => type.id);
+    const index = order.indexOf(selectedTypeId);
     const target = index + direction;
-    if (index < 0 || target < 0 || target >= current.tipos.length) return current;
-    const tipos = [...current.tipos];
-    [tipos[index], tipos[target]] = [tipos[target], tipos[index]];
-    return { ...current, tipos };
+    if (index < 0 || target < 0 || target >= order.length) return current;
+    [order[index], order[target]] = [order[target], order[index]];
+    return { ...current, rutasCompra: routes.map((entry) => entry.id === route.id ? { ...entry, ordenTipoIds: order } : entry) };
   }, "Orden de compra actualizado.");
 }
 
@@ -1262,6 +1271,17 @@ function setupEvents() {
   $("stock-close").addEventListener("click", () => ui.stockDialog.close());
   $("stock-cancel").addEventListener("click", () => ui.stockDialog.close());
   ui.shoppingForm.addEventListener("submit", submitShopping);
+  ui.shoppingStore.addEventListener("change", () => { activeShoppingStore = ui.shoppingStore.value; renderInventory(); });
+  ui.addShoppingStore.addEventListener("click", async () => {
+    const name = window.prompt("Nombre de la tienda");
+    if (!name?.trim()) return;
+    try {
+      const id = crypto.randomUUID();
+      await saveChange((current) => ({ ...current, rutasCompra: [...(current.rutasCompra ?? []), { id, nombre: name, ordenTipoIds: current.tipos.map((type) => type.id) }] }), "Tienda añadida.");
+      activeShoppingStore = id;
+      render();
+    } catch (error) { showError(error); }
+  });
   ui.shoppingName.addEventListener("input", updateShoppingSuggestions);
   ui.shoppingType.addEventListener("change", () => { ui.shoppingNewTypeField.hidden = ui.shoppingType.value !== "new"; });
   $("edit-close").addEventListener("click", () => ui.editDialog.close());
