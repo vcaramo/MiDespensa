@@ -245,10 +245,12 @@ function renderRooms() {
 }
 
 function renderContainers() {
+  const canManageLocations = currentUser?.perfil === "administrador";
   ui.containerList.replaceChildren();
   const room = state.estancias.find((entry) => entry.id === selectedRoomId);
   ui.containersHeading.textContent = room?.nombre ?? "Elige una estancia";
-  ui.roomActions.hidden = !room;
+  ui.roomActions.hidden = !room || !canManageLocations;
+  ui.addContainer.hidden = !canManageLocations;
   ui.addContainer.disabled = !room || !connected;
   ui.renameRoom.disabled = !room || !connected;
   ui.deleteRoom.disabled = !room || !connected;
@@ -283,17 +285,20 @@ function renderContainers() {
     top.append(icon, titleGroup);
     const actions = document.createElement("div");
     actions.className = "container-actions";
-    actions.append(
-      makeButton("Renombrar", "text-button", () => openEditor("container-rename", container.id), !connected),
-      makeButton("Mover", "text-button", () => openEditor("container-move", container.id), !connected),
-      makeButton("Eliminar", "text-button text-button-danger", () => removeContainer(container.id), !connected),
-    );
-    card.append(top, actions);
+    if (canManageLocations) {
+      actions.append(
+        makeButton("Renombrar", "text-button", () => openEditor("container-rename", container.id), !connected),
+        makeButton("Mover", "text-button", () => openEditor("container-move", container.id), !connected),
+        makeButton("Eliminar", "text-button text-button-danger", () => removeContainer(container.id), !connected),
+      );
+      card.append(top, actions);
+    } else card.append(top);
     ui.containerList.append(card);
   }
 }
 
 function renderTypes() {
+  const canManageStores = currentUser?.perfil === "administrador";
   ui.typeList.replaceChildren();
   const allButton = document.createElement("button");
   allButton.type = "button";
@@ -323,6 +328,9 @@ function renderTypes() {
     ui.typeList.append(button);
   }
   ui.typeActions.hidden = selectedTypeId === null;
+  ui.moveTypeUp.hidden = !canManageStores;
+  ui.moveTypeDown.hidden = !canManageStores;
+  ui.deleteType.hidden = !canManageStores;
   ui.renameType.disabled = !connected;
   const typeIndex = selectedTypeId === null ? -1 : routeOrder.indexOf(selectedTypeId);
   ui.moveTypeUp.disabled = !connected || typeIndex <= 0;
@@ -331,6 +339,7 @@ function renderTypes() {
 }
 
 function renderProducts() {
+  const canDeleteCatalog = currentUser?.perfil === "administrador";
   const selectedType = state.tipos.find((entry) => entry.id === selectedTypeId);
   ui.productsHeading.textContent = selectedType?.nombre ?? "Todos los productos";
   const products = state.productos
@@ -359,21 +368,22 @@ function renderProducts() {
     minimum.textContent = product.stockMinimo > 0 ? `Mínimo: ${product.stockMinimo}` : "Sin stock mínimo";
     const actions = document.createElement("div");
     actions.className = "container-actions";
-    actions.append(
-      makeButton("Editar", "text-button", () => openEditor("product-edit", product.id), !connected),
-      makeButton("Eliminar", "text-button text-button-danger", () => removeProduct(product.id), !connected),
-    );
+    actions.append(makeButton("Editar", "text-button", () => openEditor("product-edit", product.id), !connected));
+    if (canDeleteCatalog) actions.append(makeButton("Eliminar", "text-button text-button-danger", () => removeProduct(product.id), !connected));
     card.append(name, type, minimum, actions);
     ui.productList.append(card);
   }
 }
 
 function renderCatalog() {
+  const canManageStores = currentUser?.perfil === "administrador";
   ui.typeCount.textContent = String(state.tipos.length);
   ui.productCount.textContent = String(state.productos.length);
   ui.addType.disabled = !connected;
   ui.addProduct.disabled = !connected || state.tipos.length === 0;
   ui.bulkMinimums.disabled = !connected || state.productos.length === 0;
+  ui.addShoppingStore.hidden = !canManageStores;
+  ui.catalogStore.parentElement.hidden = !canManageStores;
   renderTypes();
   renderProducts();
 }
@@ -614,6 +624,7 @@ async function submitUser(event) {
 
 function render() {
   if (!state) return;
+  const canManageLocations = currentUser?.perfil === "administrador";
   if (!state.estancias.some((entry) => entry.id === selectedRoomId)) {
     selectedRoomId = state.estancias[0]?.id ?? null;
   }
@@ -622,6 +633,8 @@ function render() {
   ui.containerCount.textContent = String(state.contenedores.length);
   ui.addRoomMain.disabled = !connected;
   ui.addRoomSmall.disabled = !connected;
+  ui.addRoomMain.hidden = !canManageLocations;
+  ui.addRoomSmall.hidden = !canManageLocations;
   ui.importConfirm.disabled = !connected || importBusy;
   renderRooms();
   renderContainers();
