@@ -26,6 +26,12 @@ export function hasPassword() {
   return password !== null;
 }
 
+export async function login(identifier, value) {
+  const response = await fetch(new URL("../api/auth/login", import.meta.url), { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ identificador: identifier, password: value }) });
+  if (!response.ok) throw new AuthenticationError();
+  return response.json();
+}
+
 async function apiFetch(url, options = {}) {
   const headers = new Headers(options.headers);
   if (password) headers.set("X-Despensa-Password", encodeURIComponent(password));
@@ -33,7 +39,7 @@ async function apiFetch(url, options = {}) {
     ...options,
     headers,
     cache: "no-store",
-    credentials: "omit",
+    credentials: "include",
   });
   if (response.status === 401) throw new AuthenticationError();
   return response;

@@ -23,13 +23,14 @@ import {
   updateProducto,
   applyMinimumRestock,
 } from "./domain.js";
-import { AuthenticationError, checkServer, commitState, hasPassword, listBackups, listHistory, loadBackup, loadState, RevisionConflictError, setPassword } from "./storage.js";
+import { AuthenticationError, checkServer, commitState, hasPassword, listBackups, listHistory, loadBackup, loadState, login, RevisionConflictError, setPassword } from "./storage.js";
 
 const $ = (id) => document.getElementById(id);
 const ui = {
   loginDialog: $("login-dialog"),
   loginForm: $("login-form"),
   loginPassword: $("login-password"),
+  loginIdentifier: $("login-identifier"),
   loginError: $("login-error"),
   loginSubmit: $("login-submit"),
   connection: $("connection-status"),
@@ -593,7 +594,8 @@ async function submitLogin(event) {
   event.preventDefault();
   ui.loginError.hidden = true;
   ui.loginSubmit.disabled = true;
-  setPassword(ui.loginPassword.value);
+  await login(ui.loginIdentifier.value.trim(), ui.loginPassword.value);
+  setPassword(null);
   try {
     state = await loadState();
     await refreshAutoBackupStatus();
