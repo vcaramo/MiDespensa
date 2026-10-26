@@ -24,7 +24,7 @@ export async function handleApi(request, env) {
   if (url.pathname === "/api/health" && request.method === "GET") {
     return new Response("despensa-ok", { headers: { "Cache-Control": "no-store, private" } });
   }
-  if ((url.pathname !== "/api/state" && url.pathname !== "/api/backups" && !url.pathname.startsWith("/api/backups/")) || !["GET", "PUT"].includes(request.method)) {
+  if ((url.pathname !== "/api/state" && url.pathname !== "/api/backups" && !url.pathname.startsWith("/api/backups/") && url.pathname !== "/api/history") || !["GET", "PUT"].includes(request.method)) {
     return jsonResponse({ error: "Ruta no encontrada." }, 404);
   }
   const id = env.DESPENSA_STATE.idFromName("hogar-principal");
@@ -46,6 +46,16 @@ export default {
 };
 
 export class DespensaState extends DurableObject {
+  async recordHistory(before, after) {
+    const changed = ["estancias", "contenedores", "tipos", "productos", "existencias", "compras"]
+      .filter((key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]));
+    if (!changed.length) return;
+    const key = `history:${Date.now()}:${after.revision}`;
+    await this.ctx.storage.put(key, JSON.stringify({ at: after.updatedAt, revision: after.revision, changed }));
+    const entries = [...(await this.ctx.storage.list({ prefix: "history:" })).keys()].sort().reverse();
+    if (entries.length > 100) await this.ctx.storage.delete(entries.slice(100));
+  }
+
   async ensureDailyBackup(state) {
     const day = new Date().toISOString().slice(0, 10);
     const key = `backup:${day}`;
@@ -84,6 +94,14 @@ export class DespensaState extends DurableObject {
         if (backup === undefined) return jsonResponse({ error: "Copia no encontrada." }, 404);
         return jsonResponse(JSON.parse(backup));
       }
+      if (url.pathname === "/api/history") {
+        if (request.method !== "GET") return jsonResponse({ error: "MÃ©todo no permitido." }, 405);
+        const history = [...(await this.ctx.storage.list({ prefix: "history:" })).values()]
+          .map((value) => JSON.parse(value))
+          .sort((a, b) => b.revision - a.revision)
+          .slice(0, 50);
+        return jsonResponse({ history });
+      }
       if (request.method === "GET") {
         if (stored !== undefined) {
           const current = JSON.parse(stored);
@@ -116,6 +134,7 @@ export class DespensaState extends DurableObject {
         return changed;
       });
       if (result === null) return jsonResponse({ error: "El inventario cambió. Actualiza y vuelve a intentarlo." }, 409);
+      await this.recordHistory(currentStored, result);
       return jsonResponse(result);
     } catch (error) {
       if (error instanceof TypeError || error?.name === "DomainError") {

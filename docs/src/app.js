@@ -23,7 +23,7 @@ import {
   updateProducto,
   applyMinimumRestock,
 } from "./domain.js";
-import { AuthenticationError, checkServer, commitState, hasPassword, listBackups, loadBackup, loadState, RevisionConflictError, setPassword } from "./storage.js";
+import { AuthenticationError, checkServer, commitState, hasPassword, listBackups, listHistory, loadBackup, loadState, RevisionConflictError, setPassword } from "./storage.js";
 
 const $ = (id) => document.getElementById(id);
 const ui = {
@@ -97,6 +97,8 @@ const ui = {
   lowStockPanel: $("low-stock-panel"),
   lowStockList: $("low-stock-list"),
   goShoppingFromLow: $("go-shopping-from-low"),
+  historyPanel: $("history-panel"),
+  historyList: $("history-list"),
   shoppingList: $("shopping-list"),
   shoppingForm: $("shopping-form"),
   shoppingName: $("shopping-name"),
@@ -556,6 +558,7 @@ async function submitLogin(event) {
   try {
     state = await loadState();
     await refreshAutoBackupStatus();
+    await refreshHistory();
     ui.loginPassword.value = "";
     ui.loginDialog.close();
     render();
@@ -597,6 +600,24 @@ async function downloadAutoBackup() {
     showToast("Copia automática descargada.");
   } catch (error) {
     showError(error);
+  }
+}
+
+async function refreshHistory() {
+  try {
+    const result = await listHistory();
+    ui.historyList.replaceChildren();
+    const entries = result.history ?? [];
+    ui.historyPanel.hidden = entries.length === 0;
+    for (const entry of entries.slice(0, 20)) {
+      const row = document.createElement("div");
+      row.className = "history-row";
+      const date = new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeStyle: "short" }).format(new Date(entry.at));
+      row.textContent = `${date} · revisión ${entry.revision} · ${entry.changed.map((key) => ({ existencias: "inventario", compras: "lista de compra", productos: "catálogo", tipos: "tipos", estancias: "estancias", contenedores: "contenedores" }[key] ?? key)).join(", ")}`;
+      ui.historyList.append(row);
+    }
+  } catch {
+    ui.historyPanel.hidden = true;
   }
 }
 
@@ -644,6 +665,7 @@ async function saveChange(transform, success) {
   try {
     state = await commitState(state.revision, transform);
     render();
+    refreshHistory();
     showToast(success);
   } catch (error) {
     if (error instanceof RevisionConflictError) {

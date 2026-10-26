@@ -159,6 +159,9 @@ h1, h2, h3 { letter-spacing: -.04em; }
 .stock-row, .shopping-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 16px; border-top: 1px solid #e9eee6; }
 .stock-row.is-low-stock { background: #fff8ee; }
 .low-stock-badge { color: #a55d24 !important; font-size: 11px !important; font-weight: 800; }
+.history-panel { margin: 22px 0; min-height: 0; }
+.history-list { padding-top: 10px; }
+.history-row { padding: 9px 0; border-top: 1px solid #edf0e9; color: #738779; font-size: 12px; }
 .bulk-minimum-list { display: grid; gap: 8px; max-height: 48vh; overflow: auto; margin: 16px 0; }
 .bulk-minimum-row { display: grid; grid-template-columns: 1fr 110px; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #edf0e9; }
 .bulk-minimum-row span { font-weight: 700; }

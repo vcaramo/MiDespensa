@@ -75,6 +75,12 @@ export async function loadBackup(date) {
   return readResponse(response);
 }
 
+export async function listHistory() {
+  const response = await apiFetch(new URL("../api/history", import.meta.url));
+  if (!response.ok) throw new Error("No se pudo consultar el historial.");
+  return response.json();
+}
+
 export async function commitState(expectedRevision, transform) {
   const current = await loadState();
   if (current.revision !== expectedRevision) throw new RevisionConflictError();
