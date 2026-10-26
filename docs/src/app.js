@@ -81,6 +81,8 @@ const ui = {
   typeList: $("type-list"),
   typeActions: $("type-actions"),
   renameType: $("rename-type"),
+  moveTypeUp: $("move-type-up"),
+  moveTypeDown: $("move-type-down"),
   deleteType: $("delete-type"),
   productsHeading: $("products-heading"),
   filteredProductCount: $("filtered-product-count"),
@@ -287,7 +289,7 @@ function renderTypes() {
   allButton.lastChild.textContent = String(state.productos.length);
   allButton.addEventListener("click", () => { selectedTypeId = null; renderCatalog(); });
   ui.typeList.append(allButton);
-  for (const type of [...state.tipos].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))) {
+  for (const type of state.tipos) {
     const count = state.productos.filter((entry) => entry.tipoId === type.id).length;
     const button = document.createElement("button");
     button.type = "button";
@@ -304,6 +306,9 @@ function renderTypes() {
   }
   ui.typeActions.hidden = selectedTypeId === null;
   ui.renameType.disabled = !connected;
+  const typeIndex = selectedTypeId === null ? -1 : state.tipos.findIndex((entry) => entry.id === selectedTypeId);
+  ui.moveTypeUp.disabled = !connected || typeIndex <= 0;
+  ui.moveTypeDown.disabled = !connected || typeIndex < 0 || typeIndex >= state.tipos.length - 1;
   ui.deleteType.disabled = !connected;
 }
 
@@ -489,16 +494,24 @@ function renderInventory() {
   if (!state.compras.length) {
     ui.shoppingList.append(makeEmptyState("☑", "Lista vacía", "Busca un producto del catálogo o crea uno nuevo aquí."));
   } else {
-    for (const item of [...state.compras].sort((a, b) => productName(a.productoId).localeCompare(productName(b.productoId), "es"))) {
+    const typeOrder = new Map(state.tipos.map((type, index) => [type.id, index]));
+    for (const item of [...state.compras].sort((a, b) => {
+      const typeA = state.productos.find((product) => product.id === a.productoId)?.tipoId;
+      const typeB = state.productos.find((product) => product.id === b.productoId)?.tipoId;
+      return (typeOrder.get(typeA) ?? Number.MAX_SAFE_INTEGER) - (typeOrder.get(typeB) ?? Number.MAX_SAFE_INTEGER) || productName(a.productoId).localeCompare(productName(b.productoId), "es");
+    })) {
       const row = document.createElement("div");
       row.className = "shopping-row";
       const details = document.createElement("div");
       details.className = "stock-details";
       const name = document.createElement("strong");
       name.textContent = productName(item.productoId);
+      const type = state.tipos.find((entry) => entry.id === state.productos.find((product) => product.id === item.productoId)?.tipoId);
+      const typeLabel = document.createElement("span");
+      typeLabel.textContent = type?.nombre ?? "Sin zona";
       const count = document.createElement("span");
       count.textContent = `${item.cantidad} ${item.cantidad === 1 ? "unidad" : "unidades"} pendiente${item.cantidad === 1 ? "" : "s"}`;
-      details.append(name, count);
+      details.append(name, typeLabel, count);
       const actions = document.createElement("div");
       actions.className = "stock-actions";
       actions.append(
@@ -1022,6 +1035,18 @@ async function submitEditor(event) {
   }
 }
 
+async function moveSelectedType(direction) {
+  if (!selectedTypeId) return;
+  await saveChange((current) => {
+    const index = current.tipos.findIndex((type) => type.id === selectedTypeId);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= current.tipos.length) return current;
+    const tipos = [...current.tipos];
+    [tipos[index], tipos[target]] = [tipos[target], tipos[index]];
+    return { ...current, tipos };
+  }, "Orden de compra actualizado.");
+}
+
 async function removeRoom() {
   const room = state.estancias.find((entry) => entry.id === selectedRoomId);
   if (!room) return;
@@ -1227,6 +1252,8 @@ function setupEvents() {
   $("bulk-minimum-close").addEventListener("click", () => ui.bulkMinimumDialog.close());
   $("bulk-minimum-cancel").addEventListener("click", () => ui.bulkMinimumDialog.close());
   ui.renameType.addEventListener("click", () => openEditor("type-rename", selectedTypeId));
+  ui.moveTypeUp.addEventListener("click", () => moveSelectedType(-1).catch(showError));
+  ui.moveTypeDown.addEventListener("click", () => moveSelectedType(1).catch(showError));
   ui.deleteType.addEventListener("click", removeType);
   ui.addStock.addEventListener("click", () => openStockDialog("add"));
   ui.stockForm.addEventListener("submit", submitStock);
