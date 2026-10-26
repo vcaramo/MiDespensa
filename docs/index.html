@@ -277,6 +277,10 @@
           <input id="edit-minimum" name="stockMinimo" type="number" min="0" step="1" value="0" />
           <small>Se añadirá a la lista de la compra cuando queden menos unidades.</small>
         </label>
+        <label id="barcode-field" class="field" hidden>
+          <span>Código de barras (opcional)</span>
+          <input id="edit-barcode" type="text" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="EAN / UPC" />
+        </label>
         <p id="edit-error" class="form-error" role="alert" hidden></p>
         <div class="modal-actions">
           <button id="edit-cancel" type="button" class="button button-outline">Cancelar</button>
@@ -290,6 +294,10 @@
         <div class="modal-head"><div><p class="eyebrow">INVENTARIO</p><h2 id="stock-dialog-title">Añadir existencias</h2></div><button id="stock-close" type="button" class="close-button" aria-label="Cerrar">×</button></div>
         <p id="stock-help" class="stock-help" hidden>Indica las unidades que has comprado, aunque sean más de las previstas. Quedarán en «Sin asignar» hasta que las muevas a un contenedor.</p>
         <label id="stock-product-field" class="field"><span>Producto</span><select id="stock-product"></select></label>
+        <div id="stock-barcode-field" class="field barcode-entry" hidden>
+          <label for="stock-barcode"><span>Código de barras</span></label>
+          <div class="barcode-controls"><input id="stock-barcode" type="text" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="Escanea o escribe el código" /><button id="scan-barcode" class="button button-outline" type="button">Escanear</button></div>
+        </div>
         <label id="stock-target-field" class="field"><span id="stock-target-label">Contenedor</span><select id="stock-target"></select></label>
         <label class="field"><span id="stock-quantity-label">Unidades</span><input id="stock-quantity" type="number" min="1" step="1" value="1" required /></label>
         <div id="stock-restock-field" class="restock-field" hidden>
@@ -299,6 +307,13 @@
         <p id="stock-error" class="form-error" role="alert" hidden></p>
         <div class="modal-actions"><button id="stock-cancel" type="button" class="button button-outline">Cancelar</button><button id="stock-submit" type="submit" class="button button-primary">Guardar</button></div>
       </form>
+    </dialog>
+
+    <dialog id="barcode-dialog" class="modal barcode-dialog">
+      <div class="modal-head"><div><p class="eyebrow">CÓDIGO DE BARRAS</p><h2>Escanea el producto</h2></div><button id="barcode-close" type="button" class="close-button" aria-label="Cerrar">×</button></div>
+      <video id="barcode-video" playsinline muted></video>
+      <p id="barcode-status" class="import-summary">Apunta la cámara al código de barras.</p>
+      <div class="modal-actions"><button id="barcode-cancel" type="button" class="button button-outline">Cancelar</button></div>
     </dialog>
 
     <dialog id="bulk-minimum-dialog" class="modal">

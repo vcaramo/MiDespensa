@@ -59,6 +59,8 @@ const ui = {
   typeField: $("type-field"),
   editType: $("edit-type"),
   editMinimum: $("edit-minimum"),
+  barcodeField: $("barcode-field"),
+  editBarcode: $("edit-barcode"),
   minimumField: $("minimum-field"),
   editKicker: $("edit-kicker"),
   editError: $("edit-error"),
@@ -141,6 +143,9 @@ const ui = {
   stockHelp: $("stock-help"),
   stockProductField: $("stock-product-field"),
   stockProduct: $("stock-product"),
+  stockBarcodeField: $("stock-barcode-field"),
+  stockBarcode: $("stock-barcode"),
+  scanBarcode: $("scan-barcode"),
   stockTargetField: $("stock-target-field"),
   stockTargetLabel: $("stock-target-label"),
   stockTarget: $("stock-target"),
@@ -152,6 +157,9 @@ const ui = {
   stockRestockQuantity: $("stock-restock-quantity"),
   stockError: $("stock-error"),
   stockSubmit: $("stock-submit"),
+  barcodeDialog: $("barcode-dialog"),
+  barcodeVideo: $("barcode-video"),
+  barcodeStatus: $("barcode-status"),
 };
 
 let state;
@@ -169,6 +177,8 @@ let toastTimeout;
 let stockMode = null;
 let roomPanelExpanded = true;
 let containerPanelExpanded = true;
+let barcodeStream = null;
+let barcodeFrame = null;
 
 function showToast(message, isError = false) {
   clearTimeout(toastTimeout);
@@ -877,6 +887,8 @@ function openStockDialog(mode, item = null) {
   stockMode = { mode, item };
   ui.stockError.hidden = true;
   ui.stockProductField.hidden = mode !== "add";
+  ui.stockBarcodeField.hidden = mode !== "add";
+  ui.stockBarcode.value = mode === "add" && item?.productoId ? (state.productos.find((entry) => entry.id === item.productoId)?.codigoBarras ?? "") : "";
   ui.stockHelp.hidden = mode !== "purchase";
   ui.stockTargetField.hidden = mode === "remove" || mode === "purchase";
   ui.stockDialogTitle.textContent = mode === "move" ? `Mover unidades desde ${containerLabel(item.contenedorId)}` : { add: "Añadir existencias", remove: "Retirar unidades", purchase: "Guardar compra" }[mode];
@@ -1022,7 +1034,9 @@ function openEditor(mode, id = null) {
   ui.roomField.hidden = !["container-create", "container-move"].includes(mode);
   ui.typeField.hidden = !["product-create", "product-edit"].includes(mode);
   ui.minimumField.hidden = !["product-create", "product-edit"].includes(mode);
+  ui.barcodeField.hidden = !["product-create", "product-edit"].includes(mode);
   ui.editMinimum.value = "0";
+  ui.editBarcode.value = "";
   ui.editKicker.textContent = mode.startsWith("type-") || mode.startsWith("product-") ? "CATÁLOGO" : "UBICACIONES";
   const titles = {
     "room-create": "Nueva estancia",
@@ -1045,6 +1059,7 @@ function openEditor(mode, id = null) {
     const product = state.productos.find((entry) => entry.id === id);
     ui.editName.value = product?.nombre ?? "";
     ui.editMinimum.value = String(product?.stockMinimo ?? 0);
+    ui.editBarcode.value = product?.codigoBarras ?? "";
     populateTypeSelect(product?.tipoId);
   }
   if (mode === "container-create") populateRoomSelect(selectedRoomId);
@@ -1078,6 +1093,59 @@ function openBulkMinimums() {
   ui.bulkMinimumDialog.showModal();
 }
 
+function stopBarcodeScanner() {
+  if (barcodeFrame) cancelAnimationFrame(barcodeFrame);
+  barcodeFrame = null;
+  if (barcodeStream) barcodeStream.getTracks().forEach((track) => track.stop());
+  barcodeStream = null;
+  ui.barcodeVideo.srcObject = null;
+}
+
+function selectProductByBarcode(value) {
+  const code = String(value ?? "").trim();
+  const product = state.productos.find((entry) => entry.codigoBarras === code);
+  ui.stockProduct.value = product?.id ?? "";
+  ui.stockError.textContent = product ? "" : "No hay ningún producto con ese código. Asígnalo al editar o crear el producto.";
+  ui.stockError.hidden = Boolean(product || !code);
+}
+
+async function openBarcodeScanner() {
+  if (!window.BarcodeDetector) {
+    showError(new Error("Este navegador no permite escanear códigos desde la cámara. Escribe el código manualmente o usa un lector USB."));
+    return;
+  }
+  if (!navigator.mediaDevices?.getUserMedia) {
+    showError(new Error("No se puede acceder a la cámara desde este navegador."));
+    return;
+  }
+  try {
+    barcodeStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+    ui.barcodeVideo.srcObject = barcodeStream;
+    await ui.barcodeVideo.play();
+    ui.barcodeStatus.textContent = "Apunta la cámara al código de barras.";
+    ui.barcodeDialog.showModal();
+    const detector = new BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"] });
+    const scan = async () => {
+      if (!barcodeStream || !ui.barcodeDialog.open) return;
+      try {
+        const codes = await detector.detect(ui.barcodeVideo);
+        const value = codes[0]?.rawValue;
+        if (value) {
+          ui.stockBarcode.value = value;
+          selectProductByBarcode(value);
+          ui.barcodeDialog.close();
+          return;
+        }
+      } catch { /* seguir probando el siguiente fotograma */ }
+      barcodeFrame = requestAnimationFrame(scan);
+    };
+    barcodeFrame = requestAnimationFrame(scan);
+  } catch (error) {
+    stopBarcodeScanner();
+    showError(new Error(error?.name === "NotAllowedError" ? "El navegador no ha concedido permiso para usar la cámara." : "No se pudo abrir la cámara."));
+  }
+}
+
 async function submitBulkMinimums(event) {
   event.preventDefault();
   ui.bulkMinimumError.hidden = true;
@@ -1104,6 +1172,7 @@ async function submitEditor(event) {
   const roomId = ui.editRoom.value;
   const typeId = ui.editType.value;
   const stockMinimo = Number(ui.editMinimum.value);
+  const codigoBarras = ui.editBarcode.value;
   try {
     if (mode === "room-create") {
       const newId = crypto.randomUUID();
@@ -1128,10 +1197,10 @@ async function submitEditor(event) {
       await saveChange((current) => renameTipo(current, id, name), "Tipo renombrado.");
     } else if (mode === "product-create") {
       const newId = crypto.randomUUID();
-      await saveChange((current) => createProducto(current, { id: newId, tipoId: typeId, nombre: name, stockMinimo }), "Producto creado.");
+      await saveChange((current) => createProducto(current, { id: newId, tipoId: typeId, nombre: name, stockMinimo, codigoBarras }), "Producto creado.");
       selectedTypeId = typeId;
     } else if (mode === "product-edit") {
-      await saveChange((current) => updateProducto(current, id, { tipoId: typeId, nombre: name, stockMinimo }), "Producto actualizado.");
+      await saveChange((current) => updateProducto(current, id, { tipoId: typeId, nombre: name, stockMinimo, codigoBarras }), "Producto actualizado.");
       selectedTypeId = typeId;
     }
     ui.editDialog.close();
@@ -1371,6 +1440,11 @@ function setupEvents() {
   ui.deleteType.addEventListener("click", removeType);
   ui.addStock.addEventListener("click", () => openStockDialog("add"));
   ui.stockForm.addEventListener("submit", submitStock);
+  ui.stockBarcode.addEventListener("input", () => selectProductByBarcode(ui.stockBarcode.value));
+  ui.scanBarcode.addEventListener("click", openBarcodeScanner);
+  $("barcode-close").addEventListener("click", () => ui.barcodeDialog.close());
+  $("barcode-cancel").addEventListener("click", () => ui.barcodeDialog.close());
+  ui.barcodeDialog.addEventListener("close", stopBarcodeScanner);
   ui.stockQuantity.addEventListener("input", updateRestockOffer);
   ui.stockRestock.addEventListener("change", updateRestockOffer);
   $("stock-close").addEventListener("click", () => ui.stockDialog.close());

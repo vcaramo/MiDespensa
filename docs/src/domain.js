@@ -176,25 +176,36 @@ function requireMinimum(value = 0) {
   return value;
 }
 
-export function createProducto(state, { id, tipoId, nombre, stockMinimo = 0 }) {
+function cleanBarcode(value) {
+  if (value === undefined || value === null || String(value).trim() === "") return undefined;
+  const code = String(value).trim();
+  if (!/^\d{8,14}$/.test(code)) throw new DomainError("El código de barras debe contener entre 8 y 14 dígitos.");
+  return code;
+}
+
+export function createProducto(state, { id, tipoId, nombre, stockMinimo = 0, codigoBarras }) {
   requireId(id);
   findById(state.tipos, tipoId, "El tipo");
   if (state.productos.some((entry) => entry.id === id)) throw new DomainError("El identificador ya existe.");
   const name = cleanName(nombre);
   ensureUniqueName(state.productos, name, null, "un producto");
   const minimum = requireMinimum(stockMinimo);
-  return { ...state, productos: [...state.productos, { id, tipoId, nombre: name, ...(minimum > 0 ? { stockMinimo: minimum } : {}) }] };
+  const barcode = cleanBarcode(codigoBarras);
+  if (barcode && state.productos.some((entry) => entry.codigoBarras === barcode)) throw new DomainError("Ese código de barras ya está asignado a otro producto.");
+  return { ...state, productos: [...state.productos, { id, tipoId, nombre: name, ...(minimum > 0 ? { stockMinimo: minimum } : {}), ...(barcode ? { codigoBarras: barcode } : {}) }] };
 }
 
-export function updateProducto(state, id, { tipoId, nombre, stockMinimo = 0 }) {
+export function updateProducto(state, id, { tipoId, nombre, stockMinimo = 0, codigoBarras }) {
   findById(state.productos, id, "El producto");
   findById(state.tipos, tipoId, "El tipo");
   const name = cleanName(nombre);
   ensureUniqueName(state.productos, name, id, "un producto");
+  const barcode = cleanBarcode(codigoBarras);
+  if (barcode && state.productos.some((entry) => entry.id !== id && entry.codigoBarras === barcode)) throw new DomainError("Ese código de barras ya está asignado a otro producto.");
   return {
     ...state,
     productos: state.productos.map((entry) =>
-      entry.id === id ? (() => { const minimum = requireMinimum(stockMinimo); const updated = { ...entry, tipoId, nombre: name }; if (minimum > 0) updated.stockMinimo = minimum; else delete updated.stockMinimo; return updated; })() : entry,
+      entry.id === id ? (() => { const minimum = requireMinimum(stockMinimo); const updated = { ...entry, tipoId, nombre: name }; if (minimum > 0) updated.stockMinimo = minimum; else delete updated.stockMinimo; if (barcode) updated.codigoBarras = barcode; else delete updated.codigoBarras; return updated; })() : entry,
     ),
   };
 }
@@ -353,6 +364,8 @@ export function validateState(input) {
       const product = { id: requireId(entry.id), tipoId: requireId(entry.tipoId), nombre: cleanName(entry.nombre) };
       const minimum = entry.stockMinimo === undefined ? 0 : requireMinimum(entry.stockMinimo);
       if (minimum > 0) product.stockMinimo = minimum;
+      const barcode = cleanBarcode(entry.codigoBarras);
+      if (barcode) product.codigoBarras = barcode;
       return product;
     }),
     existencias: readCollection(input, "existencias", (entry) => ({
@@ -380,6 +393,12 @@ export function validateState(input) {
   ensureUniqueNames(state.estancias, "estancias");
   ensureUniqueNames(state.tipos, "tipos");
   ensureUniqueNames(state.productos, "productos");
+  const barcodes = new Set();
+  for (const product of state.productos) {
+    if (!product.codigoBarras) continue;
+    if (barcodes.has(product.codigoBarras)) throw new DomainError("Hay códigos de barras duplicados en el catálogo.");
+    barcodes.add(product.codigoBarras);
+  }
   ensureUniqueNames(state.contenedores, "contenedores", (entry) => entry.estanciaId);
 
   const roomIds = new Set(state.estancias.map((entry) => entry.id));

@@ -224,6 +224,10 @@ h1, h2, h3 { letter-spacing: -.04em; }
 .import-warning { border-radius: 10px; padding: 13px; background: #fff4e9; color: #92612c; font-size: 13px; line-height: 1.5; }
 .toast { position: fixed; z-index: 10; left: 50%; bottom: 22px; transform: translateX(-50%); max-width: min(95vw, 530px); border-radius: 10px; padding: 12px 18px; background: #173d2f; color: #fff; box-shadow: 0 12px 30px #0b2b1a35; font-size: 13px; text-align: center; }
 .toast.is-error { background: #9f453c; }
+.barcode-controls { display: flex; gap: 8px; }
+.barcode-controls input { min-width: 0; flex: 1; }
+.barcode-dialog { max-width: min(94vw, 520px); }
+.barcode-dialog video { display: block; width: 100%; min-height: 220px; max-height: 55vh; object-fit: cover; border-radius: 12px; background: #102a22; }
 
 @media (max-width: 960px) {
   .header-inner { gap: 25px; }
