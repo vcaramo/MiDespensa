@@ -37,7 +37,9 @@ export default {
     const pathname = new URL(request.url).pathname;
     if (pathname.startsWith("/api/auth/")) {
       const id = env.DESPENSA_STATE.idFromName("hogar-principal");
-      return env.DESPENSA_STATE.get(id).fetch(request);
+      const forwarded = new Request(request);
+      if (env.APP_PASSWORD) forwarded.headers.set("X-Despensa-Bootstrap", env.APP_PASSWORD);
+      return env.DESPENSA_STATE.get(id).fetch(forwarded);
     }
     if (pathname.startsWith("/api/")) {
       if (!env.APP_PASSWORD || env.APP_PASSWORD.length < 16) {
@@ -56,8 +58,9 @@ export class DespensaState extends DurableObject {
   async auth(request) {
     const url = new URL(request.url);
     let users = (await this.ctx.storage.get("users")) ?? [];
-    if (!users.length && this.env.APP_PASSWORD) {
-      const password = await hashPassword(this.env.APP_PASSWORD);
+    const bootstrapPassword = request.headers.get("X-Despensa-Bootstrap");
+    if (!users.length && bootstrapPassword) {
+      const password = await hashPassword(bootstrapPassword);
       users = [{ id: "admin", identificador: "admin", nombre: "Administrador", perfil: "administrador", activo: true, password }];
       await this.ctx.storage.put("users", users);
     }
