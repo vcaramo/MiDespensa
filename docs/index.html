@@ -188,10 +188,12 @@
             <p>Los cambios se guardan en un JSON compartido en el servidor. Descarga una copia JSON para poder restaurarlos.</p>
             <p id="last-export" class="last-export">Aún no has exportado una copia.</p>
           </div>
+          <p id="auto-backup-status" class="last-export">La copia automática se consulta al iniciar sesión.</p>
           <div class="backup-actions">
             <button id="export-json" class="button button-primary" type="button">Exportar JSON</button>
             <button id="export-csv" class="button button-outline" type="button">Descargar CSV</button>
             <button id="import-json" class="button button-outline" type="button">Importar JSON</button>
+            <button id="download-auto-backup" class="button button-outline" type="button" disabled>Descargar copia automática</button>
             <input id="import-file" type="file" accept=".json,application/json" hidden />
           </div>
         </section>

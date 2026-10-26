@@ -22,7 +22,7 @@ import {
   removeShoppingItem,
   updateProducto,
 } from "./domain.js";
-import { AuthenticationError, checkServer, commitState, hasPassword, loadState, RevisionConflictError, setPassword } from "./storage.js";
+import { AuthenticationError, checkServer, commitState, hasPassword, listBackups, loadBackup, loadState, RevisionConflictError, setPassword } from "./storage.js";
 
 const $ = (id) => document.getElementById(id);
 const ui = {
@@ -63,6 +63,8 @@ const ui = {
   importFile: $("import-file"),
   importConfirm: $("import-confirm"),
   lastExport: $("last-export"),
+  autoBackupStatus: $("auto-backup-status"),
+  downloadAutoBackup: $("download-auto-backup"),
   toast: $("toast"),
   typeCount: $("type-count"),
   productCount: $("product-count"),
@@ -501,6 +503,7 @@ async function submitLogin(event) {
   setPassword(ui.loginPassword.value);
   try {
     state = await loadState();
+    await refreshAutoBackupStatus();
     ui.loginPassword.value = "";
     ui.loginDialog.close();
     render();
@@ -515,6 +518,33 @@ async function submitLogin(event) {
     ui.loginError.hidden = false;
   } finally {
     ui.loginSubmit.disabled = false;
+  }
+}
+
+async function refreshAutoBackupStatus() {
+  try {
+    const result = await listBackups();
+    const latest = result.backups?.[0];
+    ui.autoBackupStatus.textContent = latest
+      ? `Copia automática más reciente: ${new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(`${latest.date}T00:00:00Z`))}. Se conservan hasta 30 días.`
+      : "La primera copia automática se creará al consultar los datos.";
+    ui.downloadAutoBackup.disabled = !latest;
+    ui.downloadAutoBackup.dataset.date = latest?.date ?? "";
+  } catch {
+    ui.autoBackupStatus.textContent = "No se pudo consultar el estado de las copias automáticas.";
+    ui.downloadAutoBackup.disabled = true;
+  }
+}
+
+async function downloadAutoBackup() {
+  const date = ui.downloadAutoBackup.dataset.date;
+  if (!date) return;
+  try {
+    const backup = await loadBackup(date);
+    downloadFile(JSON.stringify({ ...backup, exportedAt: new Date().toISOString() }, null, 2), `despensa-automatica-${date}.json`, "application/json");
+    showToast("Copia automática descargada.");
+  } catch (error) {
+    showError(error);
   }
 }
 
@@ -1001,6 +1031,7 @@ function setupNavigation() {
 
 function setupEvents() {
   ui.loginForm.addEventListener("submit", submitLogin);
+  ui.downloadAutoBackup.addEventListener("click", downloadAutoBackup);
   ui.loginDialog.addEventListener("cancel", (event) => event.preventDefault());
   setupNavigation();
   ui.addRoomMain.addEventListener("click", () => openEditor("room-create"));

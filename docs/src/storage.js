@@ -64,6 +64,17 @@ export async function loadState() {
   return readResponse(await apiFetch(API_URL));
 }
 
+export async function listBackups() {
+  const response = await apiFetch(new URL("../api/backups", import.meta.url));
+  if (!response.ok) throw new Error("No se pudieron consultar las copias automáticas.");
+  return response.json();
+}
+
+export async function loadBackup(date) {
+  const response = await apiFetch(new URL(`../api/backups/${encodeURIComponent(date)}`, import.meta.url));
+  return readResponse(response);
+}
+
 export async function commitState(expectedRevision, transform) {
   const current = await loadState();
   if (current.revision !== expectedRevision) throw new RevisionConflictError();
