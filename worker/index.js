@@ -128,10 +128,13 @@ export class DespensaState extends DurableObject {
       const seed = stored === undefined ? await this.starter(request) : null;
       const url = new URL(request.url);
       if (url.pathname.startsWith("/api/auth/")) return this.auth(request);
+      let sessionUser = { perfil: "administrador" };
       if (!request.headers.get("X-Despensa-Password")) {
         const token = sessionToken(request);
         const session = token ? await this.ctx.storage.get(`session:${token}`) : null;
         if (!session || session.expiresAt <= Date.now()) return jsonResponse({ error: "Sesión no válida." }, 401);
+        const users = (await this.ctx.storage.get("users")) ?? [];
+        sessionUser = users.find((user) => user.id === session.userId) ?? { perfil: "usuario" };
       }
       if (url.pathname === "/api/backups") {
         if (request.method !== "GET") return jsonResponse({ error: "Método no permitido." }, 405);
@@ -178,6 +181,18 @@ export class DespensaState extends DurableObject {
       let input;
       try { input = JSON.parse(raw); } catch { return jsonResponse({ error: "JSON no válido." }, 400); }
       const currentStored = stored === undefined ? seed : JSON.parse(stored);
+      if (request.method === "PUT" && sessionUser.perfil === "usuario") {
+        const proposed = input.state;
+        const same = (key) => JSON.stringify(currentStored[key] ?? []) === JSON.stringify(proposed[key] ?? []);
+        const onlyAddsOrEdits = (key) => {
+          const before = new Map((currentStored[key] ?? []).map((entry) => [entry.id, entry]));
+          return (proposed[key] ?? []).every((entry) => !before.has(entry.id) || JSON.stringify(before.get(entry.id)) !== JSON.stringify(entry));
+        };
+        const noDeletes = (key) => (currentStored[key] ?? []).every((entry) => (proposed[key] ?? []).some((next) => next.id === entry.id));
+        if (!same("estancias") && !same("contenedores") || !same("rutasCompra") || !onlyAddsOrEdits("tipos") || !noDeletes("tipos") || !onlyAddsOrEdits("productos") || !noDeletes("productos")) {
+          return jsonResponse({ error: "Tu perfil no permite modificar la estructura de ubicaciones, tiendas ni eliminar elementos del catálogo." }, 403);
+        }
+      }
       await this.ensureDailyBackup(currentStored);
       const result = await this.ctx.storage.transaction(async (transaction) => {
         const snapshot = await transaction.get("json");
