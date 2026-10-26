@@ -227,7 +227,14 @@ function makeEmptyState(symbol, title, description) {
 }
 
 function productIcon(product) {
-  const value = `${product.nombre} ${state.tipos.find((type) => type.id === product.tipoId)?.nombre ?? ""}`.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("es");
+  const typeName = state.tipos.find((type) => type.id === product.tipoId)?.nombre ?? "";
+  const normalizedType = typeName.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("es");
+  const value = product.nombre.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("es");
+  if (/conserva|tarro/.test(normalizedType)) return "🥫";
+  if (/congelado/.test(normalizedType)) return "❄️";
+  if (/bebida/.test(normalizedType)) return "🧃";
+  if (/limpieza|lavanderia/.test(normalizedType)) return "🧽";
+  if (/higiene/.test(normalizedType)) return "🧴";
   const matches = [
     [/pollo|carne|ternera|cerdo|ave/, "🍗"], [/pescado|merluza|salmon|atun|sardina|marisco/, "🐟"], [/jamon|salchicha|chorizo|charcut/, "🥩"], [/tortilla|pizza|lasana|canelon|croqueta|precocinado/, "🍽️"], [/leche|yogur|queso|mantequilla|huevo/, "🥛"], [/pan|galleta|harina|arroz|pasta|cereal/, "🍞"], [/fruta|manzana|platano|naranja|limon|pera/, "🍎"], [/verdura|tomate|lechuga|zanahoria|cebolla|patata/, "🥦"], [/agua|zumo|refresco|cafe|te|bebida/, "🧃"], [/limpieza|detergente|lavavajillas|lejia/, "🧽"], [/higiene|jabon|champu|ducha|dientes|desodorante/, "🧴"],
   ];
