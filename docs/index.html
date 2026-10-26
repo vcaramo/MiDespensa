@@ -110,6 +110,7 @@
           <div class="locations-layout catalog-layout">
             <section class="panel type-panel" aria-labelledby="types-heading">
               <div class="panel-heading"><h2 id="types-heading">Tipos</h2></div>
+              <div class="catalog-toolbar"><label class="field compact-field"><span>Tienda a configurar</span><select id="catalog-store"></select></label><button id="add-shopping-store" class="button button-outline" type="button">+ Nueva tienda</button></div>
               <div id="type-list" class="type-list"></div>
               <div id="type-actions" class="room-actions" hidden>
                 <button id="move-type-up" class="text-button" type="button">↑ Subir</button>
@@ -171,7 +172,7 @@
             <p>Busca productos del catálogo o crea uno nuevo mientras preparas la lista.</p>
             <span id="shopping-offline-hint" class="offline-hint" hidden>Sin conexión con el servidor: la vista puede estar desactualizada.</span>
           </div>
-          <div class="catalog-toolbar"><label class="field compact-field"><span>Tienda</span><select id="shopping-store"></select></label><button id="add-shopping-store" class="button button-outline" type="button">+ Nueva tienda</button></div>
+          <div class="catalog-toolbar"><label class="field compact-field"><span>Ordenar por tienda</span><select id="shopping-store"></select></label></div>
           <div class="catalog-summary" aria-label="Resumen de la compra">
             <span><strong id="shopping-total">0</strong> unidades pendientes</span>
           </div>

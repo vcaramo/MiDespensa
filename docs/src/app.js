@@ -111,6 +111,7 @@ const ui = {
   historyList: $("history-list"),
   shoppingList: $("shopping-list"),
   shoppingStore: $("shopping-store"),
+  catalogStore: $("catalog-store"),
   addShoppingStore: $("add-shopping-store"),
   shoppingForm: $("shopping-form"),
   shoppingName: $("shopping-name"),
@@ -417,7 +418,7 @@ function renderInventory() {
   if (!state.rutasCompra?.length) state.rutasCompra = [{ id: "general", nombre: "Tienda general", ordenTipoIds: state.tipos.map((type) => type.id) }];
   const route = state.rutasCompra.find((entry) => entry.id === activeShoppingStore) ?? state.rutasCompra[0];
   activeShoppingStore = route.id;
-  ui.shoppingStore.replaceChildren(...state.rutasCompra.map((entry) => { const option = document.createElement("option"); option.value = entry.id; option.textContent = entry.nombre; option.selected = entry.id === activeShoppingStore; return option; }));
+  renderStoreSelectors();
   ui.stockTotal.textContent = String(state.existencias.reduce((total, entry) => total + entry.cantidad, 0));
   ui.stockProducts.textContent = String(new Set(state.existencias.map((entry) => entry.productoId)).size);
   ui.shoppingTotal.textContent = String(state.compras.reduce((total, entry) => total + entry.cantidad, 0));
@@ -529,6 +530,12 @@ function renderInventory() {
       ui.shoppingList.append(row);
     }
   }
+}
+
+function renderStoreSelectors() {
+  const options = state.rutasCompra.map((entry) => { const option = document.createElement("option"); option.value = entry.id; option.textContent = entry.nombre; option.selected = entry.id === activeShoppingStore; return option; });
+  ui.shoppingStore.replaceChildren(...options.map((option) => option.cloneNode(true)));
+  ui.catalogStore.replaceChildren(...options);
 }
 
 function renderLastExport() {
@@ -1272,6 +1279,7 @@ function setupEvents() {
   $("stock-cancel").addEventListener("click", () => ui.stockDialog.close());
   ui.shoppingForm.addEventListener("submit", submitShopping);
   ui.shoppingStore.addEventListener("change", () => { activeShoppingStore = ui.shoppingStore.value; renderInventory(); });
+  ui.catalogStore.addEventListener("change", () => { activeShoppingStore = ui.catalogStore.value; renderCatalog(); });
   ui.addShoppingStore.addEventListener("click", async () => {
     const name = window.prompt("Nombre de la tienda");
     if (!name?.trim()) return;
