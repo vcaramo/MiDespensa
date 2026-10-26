@@ -293,7 +293,10 @@ function renderTypes() {
   allButton.lastChild.textContent = String(state.productos.length);
   allButton.addEventListener("click", () => { selectedTypeId = null; renderCatalog(); });
   ui.typeList.append(allButton);
-  for (const type of state.tipos) {
+  const route = state.rutasCompra?.find((entry) => entry.id === activeShoppingStore);
+  const routeOrder = route?.ordenTipoIds?.length ? route.ordenTipoIds : state.tipos.map((type) => type.id);
+  const orderedTypes = routeOrder.map((id) => state.tipos.find((type) => type.id === id)).filter(Boolean);
+  for (const [position, type] of orderedTypes.entries()) {
     const count = state.productos.filter((entry) => entry.tipoId === type.id).length;
     const button = document.createElement("button");
     button.type = "button";
@@ -302,7 +305,7 @@ function renderTypes() {
     const label = document.createElement("span");
     label.textContent = type.nombre;
     const number = document.createElement("span");
-    number.textContent = String(count);
+    number.textContent = `${position + 1} · ${count}`;
     number.setAttribute("aria-label", `${count} ${count === 1 ? "producto" : "productos"}`);
     button.append(label, number);
     button.addEventListener("click", () => { selectedTypeId = type.id; renderCatalog(); });
@@ -310,9 +313,9 @@ function renderTypes() {
   }
   ui.typeActions.hidden = selectedTypeId === null;
   ui.renameType.disabled = !connected;
-  const typeIndex = selectedTypeId === null ? -1 : state.tipos.findIndex((entry) => entry.id === selectedTypeId);
+  const typeIndex = selectedTypeId === null ? -1 : routeOrder.indexOf(selectedTypeId);
   ui.moveTypeUp.disabled = !connected || typeIndex <= 0;
-  ui.moveTypeDown.disabled = !connected || typeIndex < 0 || typeIndex >= state.tipos.length - 1;
+  ui.moveTypeDown.disabled = !connected || typeIndex < 0 || typeIndex >= routeOrder.length - 1;
   ui.deleteType.disabled = !connected;
 }
 
