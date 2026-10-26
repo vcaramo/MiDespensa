@@ -183,7 +183,16 @@ function cleanBarcode(value) {
   return code;
 }
 
-export function createProducto(state, { id, tipoId, nombre, stockMinimo = 0, codigoBarras }) {
+function cleanImageUrl(value) {
+  if (value === undefined || value === null || String(value).trim() === "") return undefined;
+  try {
+    const url = new URL(String(value).trim());
+    if (url.protocol !== "https:") throw new Error();
+    return url.href;
+  } catch { throw new DomainError("La imagen del producto debe ser una URL HTTPS válida."); }
+}
+
+export function createProducto(state, { id, tipoId, nombre, stockMinimo = 0, codigoBarras, imagenUrl }) {
   requireId(id);
   findById(state.tipos, tipoId, "El tipo");
   if (state.productos.some((entry) => entry.id === id)) throw new DomainError("El identificador ya existe.");
@@ -191,21 +200,23 @@ export function createProducto(state, { id, tipoId, nombre, stockMinimo = 0, cod
   ensureUniqueName(state.productos, name, null, "un producto");
   const minimum = requireMinimum(stockMinimo);
   const barcode = cleanBarcode(codigoBarras);
+  const image = cleanImageUrl(imagenUrl);
   if (barcode && state.productos.some((entry) => entry.codigoBarras === barcode)) throw new DomainError("Ese código de barras ya está asignado a otro producto.");
-  return { ...state, productos: [...state.productos, { id, tipoId, nombre: name, ...(minimum > 0 ? { stockMinimo: minimum } : {}), ...(barcode ? { codigoBarras: barcode } : {}) }] };
+  return { ...state, productos: [...state.productos, { id, tipoId, nombre: name, ...(minimum > 0 ? { stockMinimo: minimum } : {}), ...(barcode ? { codigoBarras: barcode } : {}), ...(image ? { imagenUrl: image } : {}) }] };
 }
 
-export function updateProducto(state, id, { tipoId, nombre, stockMinimo = 0, codigoBarras }) {
+export function updateProducto(state, id, { tipoId, nombre, stockMinimo = 0, codigoBarras, imagenUrl }) {
   findById(state.productos, id, "El producto");
   findById(state.tipos, tipoId, "El tipo");
   const name = cleanName(nombre);
   ensureUniqueName(state.productos, name, id, "un producto");
   const barcode = cleanBarcode(codigoBarras);
+  const image = cleanImageUrl(imagenUrl);
   if (barcode && state.productos.some((entry) => entry.id !== id && entry.codigoBarras === barcode)) throw new DomainError("Ese código de barras ya está asignado a otro producto.");
   return {
     ...state,
     productos: state.productos.map((entry) =>
-      entry.id === id ? (() => { const minimum = requireMinimum(stockMinimo); const updated = { ...entry, tipoId, nombre: name }; if (minimum > 0) updated.stockMinimo = minimum; else delete updated.stockMinimo; if (barcode) updated.codigoBarras = barcode; else delete updated.codigoBarras; return updated; })() : entry,
+      entry.id === id ? (() => { const minimum = requireMinimum(stockMinimo); const updated = { ...entry, tipoId, nombre: name }; if (minimum > 0) updated.stockMinimo = minimum; else delete updated.stockMinimo; if (barcode) updated.codigoBarras = barcode; else delete updated.codigoBarras; if (image) updated.imagenUrl = image; else delete updated.imagenUrl; return updated; })() : entry,
     ),
   };
 }
@@ -366,6 +377,8 @@ export function validateState(input) {
       if (minimum > 0) product.stockMinimo = minimum;
       const barcode = cleanBarcode(entry.codigoBarras);
       if (barcode) product.codigoBarras = barcode;
+      const image = cleanImageUrl(entry.imagenUrl);
+      if (image) product.imagenUrl = image;
       return product;
     }),
     existencias: readCollection(input, "existencias", (entry) => ({

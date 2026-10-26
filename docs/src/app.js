@@ -61,6 +61,7 @@ const ui = {
   editMinimum: $("edit-minimum"),
   barcodeField: $("barcode-field"),
   editBarcode: $("edit-barcode"),
+  editImageUrl: $("edit-image-url"),
   scanCatalogBarcode: $("scan-catalog-barcode"),
   minimumField: $("minimum-field"),
   editKicker: $("edit-kicker"),
@@ -225,6 +226,28 @@ function makeEmptyState(symbol, title, description) {
   return wrapper;
 }
 
+function productIcon(product) {
+  const value = `${product.nombre} ${state.tipos.find((type) => type.id === product.tipoId)?.nombre ?? ""}`.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("es");
+  const matches = [
+    [/pollo|carne|ternera|cerdo|ave/, "🍗"], [/pescado|merluza|salmon|atun|sardina|marisco/, "🐟"], [/jamon|salchicha|chorizo|charcut/, "🥩"], [/tortilla|pizza|lasana|canelon|croqueta|precocinado/, "🍽️"], [/leche|yogur|queso|mantequilla|huevo/, "🥛"], [/pan|galleta|harina|arroz|pasta|cereal/, "🍞"], [/fruta|manzana|platano|naranja|limon|pera/, "🍎"], [/verdura|tomate|lechuga|zanahoria|cebolla|patata/, "🥦"], [/agua|zumo|refresco|cafe|te|bebida/, "🧃"], [/limpieza|detergente|lavavajillas|lejia/, "🧽"], [/higiene|jabon|champu|ducha|dientes|desodorante/, "🧴"],
+  ];
+  return matches.find(([pattern]) => pattern.test(value))?.[1] ?? "🛒";
+}
+
+function productVisual(product) {
+  const wrapper = document.createElement("span");
+  wrapper.className = "product-visual";
+  if (product.imagenUrl) {
+    const image = document.createElement("img");
+    image.src = product.imagenUrl;
+    image.alt = "";
+    image.loading = "lazy";
+    image.onerror = () => { image.remove(); wrapper.textContent = productIcon(product); };
+    wrapper.append(image);
+  } else wrapper.textContent = productIcon(product);
+  return wrapper;
+}
+
 function togglePanel(button, elements) {
   const expanded = button.getAttribute("aria-expanded") !== "false";
   if (button === ui.toggleRoomPanel) roomPanelExpanded = !expanded;
@@ -386,6 +409,7 @@ function renderProducts() {
   for (const product of products) {
     const card = document.createElement("article");
     card.className = "product-card";
+    card.append(productVisual(product));
     const name = document.createElement("h3");
     name.textContent = product.nombre;
     const type = document.createElement("span");
@@ -1039,6 +1063,7 @@ function openEditor(mode, id = null) {
   ui.barcodeField.hidden = !["product-create", "product-edit"].includes(mode);
   ui.editMinimum.value = "0";
   ui.editBarcode.value = "";
+  ui.editImageUrl.value = "";
   ui.editKicker.textContent = mode.startsWith("type-") || mode.startsWith("product-") ? "CATÁLOGO" : "UBICACIONES";
   const titles = {
     "room-create": "Nueva estancia",
@@ -1062,6 +1087,7 @@ function openEditor(mode, id = null) {
     ui.editName.value = product?.nombre ?? "";
     ui.editMinimum.value = String(product?.stockMinimo ?? 0);
     ui.editBarcode.value = product?.codigoBarras ?? "";
+    ui.editImageUrl.value = product?.imagenUrl ?? "";
     populateTypeSelect(product?.tipoId);
   }
   if (mode === "container-create") populateRoomSelect(selectedRoomId);
@@ -1163,6 +1189,7 @@ async function fillProductFromDatabase(code) {
       return;
     }
     if (result.name) ui.editName.value = result.name;
+    if (result.imageUrl) ui.editImageUrl.value = result.imageUrl;
     const category = result.categories?.split(",")[0]?.trim();
     const details = [result.brand, result.quantity, category].filter(Boolean).join(" · ");
     const source = result.source ? `Fuente: ${result.source}. ` : "";
@@ -1202,6 +1229,7 @@ async function submitEditor(event) {
   const typeId = ui.editType.value;
   const stockMinimo = Number(ui.editMinimum.value);
   const codigoBarras = ui.editBarcode.value;
+  const imagenUrl = ui.editImageUrl.value;
   try {
     if (mode === "room-create") {
       const newId = crypto.randomUUID();
@@ -1226,10 +1254,10 @@ async function submitEditor(event) {
       await saveChange((current) => renameTipo(current, id, name), "Tipo renombrado.");
     } else if (mode === "product-create") {
       const newId = crypto.randomUUID();
-      await saveChange((current) => createProducto(current, { id: newId, tipoId: typeId, nombre: name, stockMinimo, codigoBarras }), "Producto creado.");
+      await saveChange((current) => createProducto(current, { id: newId, tipoId: typeId, nombre: name, stockMinimo, codigoBarras, imagenUrl }), "Producto creado.");
       selectedTypeId = typeId;
     } else if (mode === "product-edit") {
-      await saveChange((current) => updateProducto(current, id, { tipoId: typeId, nombre: name, stockMinimo, codigoBarras }), "Producto actualizado.");
+      await saveChange((current) => updateProducto(current, id, { tipoId: typeId, nombre: name, stockMinimo, codigoBarras, imagenUrl }), "Producto actualizado.");
       selectedTypeId = typeId;
     }
     ui.editDialog.close();

@@ -152,6 +152,8 @@ h1, h2, h3 { letter-spacing: -.04em; }
 .count-badge { flex: none; border-radius: 99px; padding: 6px 10px; background: #edf4ec; color: #4b7656; font-size: 12px; font-weight: 700; }
 .product-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding-top: 17px; }
 .product-card { min-width: 0; border: 1px solid #e5ebe1; border-radius: 12px; padding: 18px; background: #fcfdfa; }
+.product-visual { width: 54px; height: 54px; display: grid; place-items: center; margin-bottom: 12px; border-radius: 14px; overflow: hidden; background: #edf4e9; font-size: 30px; }
+.product-visual img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
 .product-card h3 { margin: 0 0 8px; font-size: 16px; overflow-wrap: anywhere; }
 .product-type { display: inline-block; border-radius: 99px; padding: 5px 9px; background: #f1f4e9; color: #688169; font-size: 11px; font-weight: 700; }
 .product-card .container-actions { margin-top: 15px; }
