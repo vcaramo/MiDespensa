@@ -1,5 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import { initialState, jsonResponse, MAX_STATE_BYTES, nextState } from "./state.js";
+import { createSession, hashPassword, sessionCookie, sessionToken, verifyPassword } from "./auth.js";
 
 async function authorized(request, env) {
   const supplied = request.headers.get("X-Despensa-Password");
@@ -33,7 +34,12 @@ export async function handleApi(request, env) {
 
 export default {
   async fetch(request, env) {
-    if (new URL(request.url).pathname.startsWith("/api/")) {
+    const pathname = new URL(request.url).pathname;
+    if (pathname.startsWith("/api/auth/")) {
+      const id = env.DESPENSA_STATE.idFromName("hogar-principal");
+      return env.DESPENSA_STATE.get(id).fetch(request);
+    }
+    if (pathname.startsWith("/api/")) {
       if (!env.APP_PASSWORD || env.APP_PASSWORD.length < 16) {
         return jsonResponse({ error: "El acceso todavía no está configurado en Cloudflare." }, 503);
       }
@@ -46,6 +52,32 @@ export default {
 };
 
 export class DespensaState extends DurableObject {
+  async auth(request) {
+    const url = new URL(request.url);
+    let users = (await this.ctx.storage.get("users")) ?? [];
+    if (!users.length && this.env.APP_PASSWORD) {
+      const password = await hashPassword(this.env.APP_PASSWORD);
+      users = [{ id: "admin", identificador: "admin", nombre: "Administrador", perfil: "administrador", activo: true, password }];
+      await this.ctx.storage.put("users", users);
+    }
+    if (url.pathname === "/api/auth/login" && request.method === "POST") {
+      const body = await request.json();
+      const user = users.find((entry) => entry.identificador === body.identificador && entry.activo !== false);
+      if (!user || !(await verifyPassword(body.password ?? "", user.password))) return jsonResponse({ error: "Credenciales incorrectas." }, 401);
+      const session = createSession(user.id);
+      await this.ctx.storage.put(`session:${session.token}`, JSON.stringify(session));
+      return new Response(JSON.stringify({ id: user.id, nombre: user.nombre, perfil: user.perfil }), { headers: { "Content-Type": "application/json", "Set-Cookie": sessionCookie(session.token) } });
+    }
+    const token = sessionToken(request);
+    const session = token ? await this.ctx.storage.get(`session:${token}`) : null;
+    if (url.pathname === "/api/auth/logout" && request.method === "POST") {
+      if (token) await this.ctx.storage.delete(`session:${token}`);
+      return new Response(null, { status: 204, headers: { "Set-Cookie": "despensa_session=; Path=/; Max-Age=0" } });
+    }
+    if (url.pathname === "/api/auth/me" && request.method === "GET" && session?.expiresAt > Date.now()) return jsonResponse(users.find((entry) => entry.id === session.userId) ?? null);
+    return jsonResponse({ error: "Sesión no válida." }, 401);
+  }
+
   async recordHistory(before, after) {
     const changed = ["estancias", "contenedores", "tipos", "productos", "existencias", "compras"]
       .filter((key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]));
@@ -94,6 +126,7 @@ export class DespensaState extends DurableObject {
       const stored = await this.ctx.storage.get("json");
       const seed = stored === undefined ? await this.starter(request) : null;
       const url = new URL(request.url);
+      if (url.pathname.startsWith("/api/auth/")) return this.auth(request);
       if (url.pathname === "/api/backups") {
         if (request.method !== "GET") return jsonResponse({ error: "Método no permitido." }, 405);
         const backups = [...(await this.ctx.storage.list({ prefix: "backup:" })).entries()]
