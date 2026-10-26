@@ -1,4 +1,4 @@
-const ITERATIONS = 120_000;
+const ITERATIONS = 100_000;
 const SESSION_DAYS = 30;
 
 function bytesToBase64(bytes) {

@@ -28,7 +28,8 @@ export function hasPassword() {
 
 export async function login(identifier, value) {
   const response = await fetch(new URL("../api/auth/login", import.meta.url), { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ identificador: identifier, password: value }) });
-  if (!response.ok) throw new AuthenticationError();
+  if (response.status === 401) throw new AuthenticationError();
+  if (!response.ok) throw new Error("El servidor de acceso ha fallado. Vuelve a intentarlo más tarde.");
   return response.json();
 }
 
