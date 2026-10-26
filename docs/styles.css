@@ -157,6 +157,8 @@ h1, h2, h3 { letter-spacing: -.04em; }
 .stock-group { margin-bottom: 20px; border: 1px solid #e5ebe1; border-radius: 12px; background: #fcfdfa; overflow: hidden; }
 .stock-group h3 { margin: 0; padding: 13px 16px; background: #f0f5ed; color: #315443; font-size: 14px; overflow-wrap: anywhere; }
 .stock-row, .shopping-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 16px; border-top: 1px solid #e9eee6; }
+.stock-row.is-low-stock { background: #fff8ee; }
+.low-stock-badge { color: #a55d24 !important; font-size: 11px !important; font-weight: 800; }
 .shopping-row { border: 1px solid #e5ebe1; border-radius: 10px; margin-bottom: 8px; background: #fcfdfa; }
 .stock-details { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .stock-details strong { font-size: 14px; overflow-wrap: anywhere; }

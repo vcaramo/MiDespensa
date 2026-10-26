@@ -435,14 +435,25 @@ function renderInventory() {
       group.append(heading);
       for (const stock of stocks) {
         const row = document.createElement("div");
-        row.className = "stock-row";
+        const product = state.productos.find((entry) => entry.id === stock.productoId);
+        const minimum = product?.stockMinimo ?? 0;
+        const productTotal = state.existencias.filter((entry) => entry.productoId === stock.productoId).reduce((sum, entry) => sum + entry.cantidad, 0);
+        const isLow = minimum > 0 && productTotal < minimum;
+        row.className = isLow ? "stock-row is-low-stock" : "stock-row";
         const details = document.createElement("div");
         details.className = "stock-details";
         const name = document.createElement("strong");
         name.textContent = productName(stock.productoId);
         const count = document.createElement("span");
         count.textContent = `${stock.cantidad} ${stock.cantidad === 1 ? "unidad" : "unidades"}`;
-        details.append(name, count);
+        if (isLow) {
+          const badge = document.createElement("span");
+          badge.className = "low-stock-badge";
+          badge.textContent = `Bajo mínimo · ${productTotal}/${minimum}`;
+          details.append(name, count, badge);
+        } else {
+          details.append(name, count);
+        }
         const actions = document.createElement("div");
         actions.className = "stock-actions";
         actions.append(
