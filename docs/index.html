@@ -295,6 +295,11 @@
         <div class="modal-head"><div><p class="eyebrow">INVENTARIO</p><h2 id="stock-dialog-title">Añadir existencias</h2></div><button id="stock-close" type="button" class="close-button" aria-label="Cerrar">×</button></div>
         <p id="stock-help" class="stock-help" hidden>Indica las unidades que has comprado, aunque sean más de las previstas. Quedarán en «Sin asignar» hasta que las muevas a un contenedor.</p>
         <label id="stock-product-field" class="field"><span>Producto</span><select id="stock-product"></select></label>
+        <div id="stock-product-search-field" class="field" hidden>
+          <label for="stock-product-search"><span>Producto</span></label>
+          <input id="stock-product-search" type="search" autocomplete="off" placeholder="Escribe para buscar…" aria-controls="stock-product-suggestions" />
+          <div id="stock-product-suggestions" class="suggestions" role="listbox" hidden></div>
+        </div>
         <div id="stock-barcode-field" class="field barcode-entry" hidden>
           <label for="stock-barcode"><span>Código de barras</span></label>
           <div class="barcode-controls"><input id="stock-barcode" type="text" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="Escanea o escribe el código" /><button id="scan-barcode" class="button button-outline" type="button">Escanear</button></div>

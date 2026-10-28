@@ -193,6 +193,7 @@ h1, h2, h3 { letter-spacing: -.04em; }
 .suggestions { margin: -7px 0 12px; border: 1px solid #d9e3d9; border-radius: 9px; overflow: hidden; }
 .suggestion-item { display: block; width: 100%; padding: 10px 12px; border: 0; border-bottom: 1px solid #edf0e9; background: #fff; color: #315443; text-align: left; font-size: 13px; }
 .suggestion-item:hover, .suggestion-item:focus-visible { background: #ecf4e9; }
+.suggestion-create { color: #2a674d; font-weight: 700; background: #f4f8f1; }
 .suggestion-item:last-child { border-bottom: 0; }
 .new-product-hint { margin: 0 0 12px; color: #63806b; font-size: 12px; }
 .stock-help { margin: -4px 0 17px; color: #63806b; font-size: 13px; line-height: 1.5; }

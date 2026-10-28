@@ -145,6 +145,9 @@ const ui = {
   stockHelp: $("stock-help"),
   stockProductField: $("stock-product-field"),
   stockProduct: $("stock-product"),
+  stockProductSearchField: $("stock-product-search-field"),
+  stockProductSearch: $("stock-product-search"),
+  stockProductSuggestions: $("stock-product-suggestions"),
   stockBarcodeField: $("stock-barcode-field"),
   stockBarcode: $("stock-barcode"),
   scanBarcode: $("scan-barcode"),
@@ -182,6 +185,7 @@ let containerPanelExpanded = true;
 let barcodeStream = null;
 let barcodeFrame = null;
 let barcodeTarget = null;
+let pendingStockProductName = null;
 
 function showToast(message, isError = false) {
   clearTimeout(toastTimeout);
@@ -915,11 +919,46 @@ function updateRestockOffer() {
   ui.stockRestockQuantityField.hidden = !willDeplete || !ui.stockRestock.checked;
 }
 
+function chooseStockProduct(product) {
+  ui.stockProduct.value = product?.id ?? "";
+  ui.stockProductSearch.value = product?.nombre ?? "";
+  ui.stockProductSuggestions.replaceChildren();
+  ui.stockProductSuggestions.hidden = true;
+  ui.stockError.hidden = true;
+}
+
+function renderStockProductSuggestions() {
+  const query = normalizedSearch(ui.stockProductSearch.value);
+  ui.stockProductSuggestions.replaceChildren();
+  const matches = state.productos
+    .filter((product) => !query || normalizedSearch(product.nombre).includes(query))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
+    .slice(0, 8);
+  for (const product of matches) {
+    const option = makeButton(product.nombre, "suggestion-item", () => chooseStockProduct(product));
+    option.setAttribute("role", "option");
+    ui.stockProductSuggestions.append(option);
+  }
+  if (query && !matches.some((product) => normalizedSearch(product.nombre) === query)) {
+    const create = makeButton(`Crear «${ui.stockProductSearch.value.trim()}» en el catálogo`, "suggestion-item suggestion-create", () => {
+      pendingStockProductName = ui.stockProductSearch.value.trim();
+      ui.stockDialog.close();
+      openEditor("product-create");
+      ui.editName.value = pendingStockProductName;
+    });
+    create.setAttribute("role", "option");
+    ui.stockProductSuggestions.append(create);
+  }
+  ui.stockProductSuggestions.hidden = matches.length === 0 && !query;
+  if (query) ui.stockProductSuggestions.hidden = false;
+}
+
 function openStockDialog(mode, item = null) {
   if (!connected) return;
   stockMode = { mode, item };
   ui.stockError.hidden = true;
-  ui.stockProductField.hidden = mode !== "add";
+  ui.stockProductField.hidden = mode === "add";
+  ui.stockProductSearchField.hidden = mode !== "add";
   ui.stockBarcodeField.hidden = mode !== "add";
   ui.stockBarcode.value = mode === "add" && item?.productoId ? (state.productos.find((entry) => entry.id === item.productoId)?.codigoBarras ?? "") : "";
   ui.stockHelp.hidden = mode !== "purchase";
@@ -929,6 +968,7 @@ function openStockDialog(mode, item = null) {
   ui.stockQuantityLabel.textContent = mode === "purchase" ? "Unidades compradas" : "Unidades";
   ui.stockSubmit.textContent = mode === "remove" ? "Retirar" : mode === "move" ? "Mover" : "Guardar";
   fillSelect(ui.stockProduct, [...state.productos].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")).map((entry) => ({ id: entry.id, label: entry.nombre })), item?.productoId);
+  chooseStockProduct(mode === "add" ? state.productos.find((product) => product.id === item?.productoId) : null);
   const destinations = [
     { id: "", label: "Sin asignar (organizar después)" },
     ...[...state.contenedores].sort((a, b) => containerLabel(a.id).localeCompare(containerLabel(b.id), "es")).map((entry) => ({ id: entry.id, label: containerLabel(entry.id) })),
@@ -939,7 +979,7 @@ function openStockDialog(mode, item = null) {
   ui.stockRestockQuantity.value = "1";
   updateRestockOffer();
   ui.stockDialog.showModal();
-  (mode === "add" ? ui.stockProduct : ui.stockQuantity).focus();
+  (mode === "add" ? ui.stockProductSearch : ui.stockQuantity).focus();
 }
 
 async function submitStock(event) {
@@ -957,6 +997,7 @@ async function submitStock(event) {
   const shoppingQuantity = mode === "remove" && ui.stockRestock.checked && !ui.stockRestockField.hidden
     ? Number(ui.stockRestockQuantity.value) : null;
   try {
+    if (mode === "add" && !productoId) throw new Error("Selecciona un producto o créalo desde el buscador.");
     if (mode === "add") {
       await saveChange((current) => addStock(current, { id: newId, productoId, contenedorId, cantidad }), "Existencias añadidas.");
     } else if (mode === "remove") {
@@ -1270,6 +1311,14 @@ async function submitEditor(event) {
     ui.editDialog.close();
     editMode = null;
     render();
+    if (mode === "product-create" && pendingStockProductName) {
+      const created = state.productos.find((product) => normalizedSearch(product.nombre) === normalizedSearch(name));
+      pendingStockProductName = null;
+      if (created) {
+        openStockDialog("add");
+        chooseStockProduct(created);
+      }
+    }
   } catch (error) {
     showError(error, ui.editError);
   } finally {
@@ -1504,6 +1553,10 @@ function setupEvents() {
   ui.deleteType.addEventListener("click", removeType);
   ui.addStock.addEventListener("click", () => openStockDialog("add"));
   ui.stockForm.addEventListener("submit", submitStock);
+  ui.stockProductSearch.addEventListener("input", () => {
+    ui.stockProduct.value = "";
+    renderStockProductSuggestions();
+  });
   ui.stockBarcode.addEventListener("input", () => selectProductByBarcode(ui.stockBarcode.value));
   ui.scanBarcode.addEventListener("click", () => openBarcodeScanner(ui.stockBarcode));
   ui.scanCatalogBarcode.addEventListener("click", () => openBarcodeScanner(ui.editBarcode));
@@ -1530,8 +1583,8 @@ function setupEvents() {
   });
   ui.shoppingName.addEventListener("input", updateShoppingSuggestions);
   ui.shoppingType.addEventListener("change", () => { ui.shoppingNewTypeField.hidden = ui.shoppingType.value !== "new"; });
-  $("edit-close").addEventListener("click", () => ui.editDialog.close());
-  $("edit-cancel").addEventListener("click", () => ui.editDialog.close());
+  $("edit-close").addEventListener("click", () => { pendingStockProductName = null; ui.editDialog.close(); });
+  $("edit-cancel").addEventListener("click", () => { pendingStockProductName = null; ui.editDialog.close(); });
   $("export-json").addEventListener("click", exportJson);
   $("export-csv").addEventListener("click", exportCsv);
   $("import-json").addEventListener("click", () => ui.importFile.click());
